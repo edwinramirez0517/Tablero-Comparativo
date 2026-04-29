@@ -61,7 +61,7 @@
             <div class="filter-group"><label>CATEGORÍA</label><select id="f-categoria"><option value="Todos">-- Todas --</option></select></div>
         </div>
 
-        <!-- Gráficos y Tabla -->
+ <!-- Gráficos y Tabla -->
         <div class="grid" id="graficos-container" style="display:none;">
             <div class="card full">
                 <h3 class="card-title">Tendencia Mensual</h3>
@@ -75,6 +75,8 @@
                 <h3 class="card-title">Comparativo por Categoría</h3>
                 <div class="chart-wrapper"><canvas id="chartCat"></canvas></div>
             </div>
+            
+            <!-- Tabla 1: Detalle por Tienda -->
             <div class="card full">
                 <h3 class="card-title">Detalle Comparativo por Tienda</h3>
                 <div style="max-height: 400px; overflow-y: auto;">
@@ -82,8 +84,8 @@
                         <thead>
                             <tr>
                                 <th>Tienda / Dimensión</th>
-                                <th>Año Actual</th>
-                                <th>Año Pasado</th>
+                                <th>Año Actual (Unidades)</th>
+                                <th>Año Pasado (Unidades)</th>
                                 <th>Diferencia</th>
                             </tr>
                         </thead>
@@ -91,8 +93,25 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Tabla 2: Resumen de Saldos Generales -->
+            <div class="card full">
+                <h3 class="card-title">Resumen de Inventario (Saldos)</h3>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table id="tableSaldos">
+                        <thead>
+                            <tr>
+                                <th>Dimensión (Tienda)</th>
+                                <th>Saldo Actual</th>
+                                <th>Saldo Anterior</th>
+                                <th>Diferencia de Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-    </div>
 
     <!-- Se conecta con tu lógica -->
     <script src="app.js"></script>
