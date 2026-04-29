@@ -4,37 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tablero Comparativo - El Compadre</title>
-
-    <!-- Librería para hacer los gráficos interactivos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    
-    <!-- Librería PapaParse para leer tu archivo CSV rápido -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
     <style>
-        /* Tus colores y diseño original intactos */
-        :root {
-            --primary: #012094;
-            --secondary: #E1251B;
-            --bg: #f4f6f9;
-            --card-bg: #ffffff;
-            --text: #333333;
-        }
+        :root { --primary: #012094; --secondary: #E1251B; --bg: #f4f6f9; --card-bg: #ffffff; --text: #333333; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text); }
         header { background-color: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         header h1 { margin: 0; font-size: 22px; }
         header .subtitle { font-size: 14px; opacity: 0.9; }
         .container { padding: 20px 30px; }
+        
+        /* Controles / Filtros */
         .filters { display: flex; gap: 15px; background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-wrap: wrap; }
         .filter-group { display: flex; flex-direction: column; min-width: 160px; }
         .filter-group label { font-size: 12px; font-weight: bold; color: var(--primary); margin-bottom: 5px; }
         .filter-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        
+        /* Gráficos */
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; }
         .card { background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
         .card.full { grid-column: span 2; }
         .card-title { font-size: 14px; font-weight: bold; color: var(--primary); margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid var(--secondary); display: inline-block; padding-bottom: 5px; }
         .chart-wrapper { position: relative; height: 350px; width: 100%; }
+        
+        /* Tabla */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px; text-align: right; border-bottom: 1px solid #eee; }
+        th { background-color: var(--primary); color: white; position: sticky; top: 0; }
+        th:first-child, td:first-child { text-align: left; }
+        .pos { color: #00A651; font-weight: bold; }
+        .neg { color: var(--secondary); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -47,26 +47,54 @@
     </header>
 
     <div class="container">
-        <!-- Mensaje temporal que se mostrará mientras la web lee tu CSV -->
+        <!-- Indicador de Carga -->
         <div id="loading" style="text-align:center; padding:20px; font-weight:bold; color:var(--primary);">
-            Cargando datos del CSV, por favor espera...
+            Cargando archivos (Ventas y Saldos), por favor espera...
         </div>
 
-        <!-- Filtros (Se mantienen ocultos hasta que termine de cargar el CSV) -->
+        <!-- Filtros Completos -->
         <div class="filters" id="filtros-container" style="display:none;">
             <div class="filter-group"><label>MES</label><select id="f-mes"><option value="Todos">-- Todos --</option></select></div>
+            <div class="filter-group"><label>TIPO TIENDA</label><select id="f-tipo"><option value="Todos">-- Todos --</option></select></div>
+            <div class="filter-group"><label>TIENDA</label><select id="f-tienda"><option value="Todos">-- Todas --</option></select></div>
+            <div class="filter-group"><label>DIVISIÓN</label><select id="f-division"><option value="Todos">-- Todas --</option></select></div>
+            <div class="filter-group"><label>CATEGORÍA</label><select id="f-categoria"><option value="Todos">-- Todas --</option></select></div>
         </div>
 
-        <!-- Gráfico (Oculto hasta que cargue el CSV) -->
+        <!-- Gráficos y Tabla -->
         <div class="grid" id="graficos-container" style="display:none;">
             <div class="card full">
                 <h3 class="card-title">Tendencia Mensual</h3>
                 <div class="chart-wrapper"><canvas id="chartLine"></canvas></div>
             </div>
+            <div class="card">
+                <h3 class="card-title">Comparativo por División</h3>
+                <div class="chart-wrapper"><canvas id="chartDiv"></canvas></div>
+            </div>
+            <div class="card">
+                <h3 class="card-title">Comparativo por Categoría</h3>
+                <div class="chart-wrapper"><canvas id="chartCat"></canvas></div>
+            </div>
+            <div class="card full">
+                <h3 class="card-title">Detalle Comparativo por Tienda</h3>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Tienda / Dimensión</th>
+                                <th>Año Actual</th>
+                                <th>Año Pasado</th>
+                                <th>Diferencia</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- AQUÍ CONECTAMOS EL ARCHIVO DE LÓGICA QUE CREAREMOS EN EL SIGUIENTE PASO -->
+    <!-- Se conecta con tu lógica -->
     <script src="app.js"></script>
 </body>
 </html>
