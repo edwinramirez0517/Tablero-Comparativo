@@ -2,8 +2,6 @@ Chart.register(ChartDataLabels);
 
 let datosVentas = [];
 let datosSaldos = [];
-
-// Diccionario para forzar el orden de los meses cronológicamente
 const ordenMeses = { 'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4, 'Mayo': 5, 'Junio': 6, 'Julio': 7, 'Agosto': 8, 'Septiembre': 9, 'Octubre': 10, 'Noviembre': 11, 'Diciembre': 12 };
 
 function formatNumber(num) {
@@ -69,7 +67,7 @@ Promise.all([cargarVentas(), cargarSaldos()]).then(archivos => {
     datosSaldos = archivos[1];
     document.getElementById('loading').style.display = 'none';
     document.getElementById('filtros-container').style.display = 'flex';
-    document.getElementById('graficos-container').style.display = 'grid';
+    document.getElementById('graficos-container').style.display = 'block';
     inicializarFiltros();
     actualizarTablero();
 }).catch(console.error);
@@ -132,16 +130,28 @@ function actualizarTablero() {
     dibujarGraficos(vFiltradas, vTendencia, sFiltrados);
 }
 
+// Opciones comunes para limpiar gráficos (sin grilla, sin ejes Y)
+const cleanChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { position: 'top' }
+    },
+    scales: {
+        x: { grid: { display: false } },
+        y: { display: false, grid: { display: false } } // Oculta eje Y y su grilla
+    }
+};
+
+const labelsConfigTop = {
+    color: '#333', anchor: 'end', align: 'top', font: { weight: 'bold', size: 11 },
+    formatter: function(value) { return formatNumber(value); }
+};
+
 // 6. DIBUJAR GRÁFICOS Y TABLAS
 function dibujarGraficos(vData, vTendenciaData, sData) {
     
-    // Configuración de Etiquetas Numéricas para Gráficos
-    const configEtiquetas = {
-        color: '#444', anchor: 'end', align: 'top', font: { weight: 'bold', size: 10 },
-        formatter: function(value) { return formatNumber(value); }
-    };
-
-    // --- 6.1 Tendencia Mensual ---
+    // --- 6.1 Tendencia Mensual (Líneas Limpias) ---
     const ctxLinea = document.getElementById('chartLine').getContext('2d');
     let mesesOrdenados = [...new Set(datosVentas.map(item => item.mes))].sort((a, b) => ordenMeses[a] - ordenMeses[b]);
     const totActual = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.actual, 0));
@@ -153,13 +163,23 @@ function dibujarGraficos(vData, vTendenciaData, sData) {
         data: {
             labels: mesesOrdenados,
             datasets: [
-                { label: 'Año Actual', data: totActual, borderColor: '#012094', backgroundColor: '#012094', tension: 0.3, borderWidth: 3 },
-                { label: 'Año Pasado', data: totPasado, borderColor: '#E1251B', backgroundColor: '#E1251B', tension: 0.3, borderWidth: 3 }
+                { label: 'Año Actual', data: totActual, borderColor: '#012094', backgroundColor: '#012094', tension: 0.3, borderWidth: 3, pointRadius: 4 },
+                { label: 'Año Pasado', data: totPasado, borderColor: '#E1251B', backgroundColor: '#E1251B', tension: 0.3, borderWidth: 3, pointRadius: 4 }
             ]
-        }, options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { y: { ticks: { callback: v => formatNumber(v) } } } }
+        }, 
+        options: {
+            ...cleanChartOptions,
+            plugins: {
+                datalabels: {
+                    color: function(context) { return context.dataset.borderColor; }, // Etiqueta del color de la línea
+                    anchor: 'bottom', align: 'bottom', font: { weight: 'bold', size: 11 },
+                    formatter: function(value) { return formatNumber(value); }
+                }
+            }
+        }
     });
     
-    // --- 6.2 Comparativo por División ---
+    // --- 6.2 Comparativo por División (Barras Limpias) ---
     const ctxDiv = document.getElementById('chartDiv').getContext('2d');
     const divisiones = [...new Set(vData.map(item => item.division))];
     const divActual = divisiones.map(d => vData.filter(x => x.division === d).reduce((s, x) => s + x.actual, 0));
@@ -168,10 +188,10 @@ function dibujarGraficos(vData, vTendenciaData, sData) {
     graficoDiv = new Chart(ctxDiv, {
         type: 'bar',
         data: { labels: divisiones, datasets: [{ label: 'Venta Actual', data: divActual, backgroundColor: '#012094' }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: configEtiquetas }, scales: { y: { ticks: { callback: v => formatNumber(v) } } } }
+        options: { ...cleanChartOptions, plugins: { datalabels: labelsConfigTop } }
     });
 
-    // --- 6.3 Comparativo por Categoría ---
+    // --- 6.3 Comparativo por Categoría (Barras Limpias) ---
     const ctxCat = document.getElementById('chartCat').getContext('2d');
     let catSuma = [];
     [...new Set(vData.map(item => item.categoria))].forEach(c => {
@@ -180,22 +200,19 @@ function dibujarGraficos(vData, vTendenciaData, sData) {
     catSuma.sort((a, b) => b.total - a.total);
     const top10Cat = catSuma.slice(0, 10);
 
-    // CORRECCIÓN DE ETIQUETAS: Extraemos explícitamente los nombres como array de texto
     const nombresCategorias = top10Cat.map(x => String(x.cat)); 
     const totalesCategorias = top10Cat.map(x => x.total);
 
     if(graficoCat) graficoCat.destroy();
     graficoCat = new Chart(ctxCat, {
-        type: 'bar', indexAxis: 'x', // Lo dejamos vertical para que se vea como en tu imagen
+        type: 'bar',
         data: { labels: nombresCategorias, datasets: [{ label: 'Venta Actual', data: totalesCategorias, backgroundColor: '#E1251B' }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: configEtiquetas }, scales: { y: { ticks: { callback: v => formatNumber(v) } } } }
+        options: { ...cleanChartOptions, plugins: { datalabels: labelsConfigTop } }
     });
 
-    // --- 6.4 TABLA 1: Resumen Gerencial Unificado (Ventas y Saldos) ---
+    // --- 6.4 TABLA 1: Resumen Gerencial por Tienda ---
     const tbodyGerencial = document.querySelector('#tablaGerencial tbody');
     tbodyGerencial.innerHTML = '';
-    
-    // Obtenemos todas las tiendas únicas juntando ventas y saldos
     let todasLasTiendas = [...new Set([...vData.map(d => d.tienda), ...sData.map(d => d.tienda)])].sort();
 
     todasLasTiendas.forEach(t => {
@@ -207,7 +224,6 @@ function dibujarGraficos(vData, vTendenciaData, sData) {
         let sPas = sData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.saldo_pasado, 0);
         let difS = sAct - sPas;
 
-        // Solo mostramos la fila si hay datos en ventas o en saldos
         if (vAct !== 0 || vPas !== 0 || sAct !== 0 || sPas !== 0) {
             let tr = document.createElement('tr');
             tr.innerHTML = `
@@ -223,25 +239,44 @@ function dibujarGraficos(vData, vTendenciaData, sData) {
         }
     });
 
-    // --- 6.5 TABLA 2: Detalle Operativo (Por División y Categoría) ---
+    // --- NUEVA 6.5 TABLA 3: Resumen de INVENTARIOS por Grupo (División y Categoría) ---
+    const tbodySaldosGrupo = document.querySelector('#tablaSaldosGrupo tbody');
+    tbodySaldosGrupo.innerHTML = '';
+    
+    let agrupadoSaldos = {};
+    sData.forEach(d => {
+        let clave = d.division + "|" + d.categoria;
+        if (!agrupadoSaldos[clave]) agrupadoSaldos[clave] = { div: d.division, cat: d.categoria, act: 0, pas: 0 };
+        agrupadoSaldos[clave].act += d.saldo_actual;
+        agrupadoSaldos[clave].pas += d.saldo_pasado;
+    });
+
+    Object.values(agrupadoSaldos).sort((a, b) => a.div.localeCompare(b.div) || a.cat.localeCompare(b.cat)).forEach(item => {
+        let difSaldos = item.act - item.pas;
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${item.div}</td>
+            <td>${item.cat}</td>
+            <td>${formatNumber(item.act)}</td>
+            <td>${formatNumber(item.pas)}</td>
+            <td class="${difSaldos >= 0 ? 'pos' : 'neg'}">${difSaldos > 0 ? '+' : ''}${formatNumber(difSaldos)}</td>
+        `;
+        tbodySaldosGrupo.appendChild(tr);
+    });
+
+    // --- 6.6 TABLA 2: Detalle Operativo de VENTAS ---
     const tbodyDetalle = document.querySelector('#tablaDetalle tbody');
     tbodyDetalle.innerHTML = '';
 
-    // Agrupamos la información por División + Categoría
-    let agrupadoDetalle = {};
+    let agrupadoVentas = {};
     vData.forEach(d => {
         let clave = d.division + "|" + d.categoria;
-        if (!agrupadoDetalle[clave]) {
-            agrupadoDetalle[clave] = { div: d.division, cat: d.categoria, act: 0, pas: 0 };
-        }
-        agrupadoDetalle[clave].act += d.actual;
-        agrupadoDetalle[clave].pas += d.pasado;
+        if (!agrupadoVentas[clave]) agrupadoVentas[clave] = { div: d.division, cat: d.categoria, act: 0, pas: 0 };
+        agrupadoVentas[clave].act += d.actual;
+        agrupadoVentas[clave].pas += d.pasado;
     });
 
-    // Convertimos el objeto a un arreglo para ordenarlo y mostrarlo
-    let arrDetalle = Object.values(agrupadoDetalle).sort((a, b) => a.div.localeCompare(b.div) || a.cat.localeCompare(b.cat));
-
-    arrDetalle.forEach(item => {
+    Object.values(agrupadoVentas).sort((a, b) => a.div.localeCompare(b.div) || a.cat.localeCompare(b.cat)).forEach(item => {
         let difCat = item.act - item.pas;
         let tr = document.createElement('tr');
         tr.innerHTML = `
