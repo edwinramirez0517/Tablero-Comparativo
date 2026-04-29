@@ -11,39 +11,41 @@
         :root { 
             --primary: #012094; /* Azul Compadre */
             --secondary: #E1251B; /* Rojo Compadre */
-            --bg: #f4f6f9; 
-            --card-bg: #ffffff; 
+            --bg: #ffffff; /* Fondo completamente blanco */
             --text: #333333; 
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text); }
+        
+        /* Encabezado */
         header { background-color: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         header h1 { margin: 0; font-size: 22px; font-weight: bold; }
         header .subtitle { font-size: 14px; opacity: 0.9; }
+        
         .container { padding: 20px 30px; }
         
         /* Filtros */
-        .filters { display: flex; gap: 15px; background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-wrap: wrap; }
+        .filters { display: flex; gap: 15px; padding: 15px 0; border-bottom: 2px solid #f0f0f0; margin-bottom: 20px; flex-wrap: wrap; }
         .filter-group { display: flex; flex-direction: column; min-width: 160px; }
         .filter-group label { font-size: 12px; font-weight: bold; color: var(--primary); margin-bottom: 5px; }
         .filter-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
         
-        /* Gráficos y Tablas */
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; }
-        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
-        .card.full { grid-column: span 2; }
-        .card-title { font-size: 14px; font-weight: bold; color: var(--primary); margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid var(--secondary); display: inline-block; padding-bottom: 5px; }
+        /* Gráficos (Sin recuadros) */
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; margin-bottom: 40px; }
+        .full-width { grid-column: span 2; }
+        .section-title { font-size: 16px; font-weight: bold; color: var(--primary); margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid var(--secondary); display: inline-block; padding-bottom: 5px; }
         .chart-wrapper { position: relative; height: 350px; width: 100%; }
         
-        /* Estilos de Tabla Gerencial */
-        .table-container { max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; }
+        /* Tablas Gerenciales */
+        .table-section { margin-bottom: 50px; }
+        .table-container { max-height: 400px; overflow-y: auto; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th, td { padding: 10px 8px; text-align: right; border-bottom: 1px solid #eee; }
         th { background-color: var(--primary); color: white; position: sticky; top: 0; z-index: 1; font-weight: 600; }
         th:first-child, td:first-child { text-align: left; font-weight: bold; color: var(--primary); }
-        .pos { color: #00A651; font-weight: bold; } /* Verde para positivo */
-        .neg { color: var(--secondary); font-weight: bold; } /* Rojo para negativo */
-        .header-ventas { background-color: #01186e; } /* Azul más oscuro para diferenciar ventas */
-        .header-saldos { background-color: #012094; } /* Azul normal para saldos */
+        .pos { color: #00A651; font-weight: bold; } 
+        .neg { color: var(--secondary); font-weight: bold; } 
+        .header-ventas { background-color: #01186e; } 
+        .header-saldos { background-color: #012094; } 
     </style>
 </head>
 <body>
@@ -51,7 +53,7 @@
     <header>
         <div>
             <h1>EL COMPADRE</h1>
-            <div class="subtitle">Tablero Comparativo Gerencial - Ventas e Inventario</div>
+            <div class="subtitle">Tablero Comparativo Gerencial - Archivo Único Integrado</div>
         </div>
     </header>
 
@@ -69,15 +71,27 @@
             <div class="filter-group"><label>CATEGORÍA</label><select id="f-categoria"><option value="Todos">-- Todas --</option></select></div>
         </div>
 
-        <div class="grid" id="graficos-container" style="display:none;">
-            <!-- Gráficos -->
-            <div class="card full"><h3 class="card-title">Tendencia Mensual</h3><div class="chart-wrapper"><canvas id="chartLine"></canvas></div></div>
-            <div class="card"><h3 class="card-title">Comparativo por División</h3><div class="chart-wrapper"><canvas id="chartDiv"></canvas></div></div>
-            <div class="card"><h3 class="card-title">Comparativo por Categoría (Top 10)</h3><div class="chart-wrapper"><canvas id="chartCat"></canvas></div></div>
+        <div id="graficos-container" style="display:none;">
             
-            <!-- TABLA 1: Resumen General (Ventas y Saldos Unificados) -->
-            <div class="card full">
-                <h3 class="card-title">Resumen por Tienda (Ventas vs Saldos)</h3>
+            <!-- Gráficos -->
+            <div class="grid">
+                <div class="full-width">
+                    <h3 class="section-title">Tendencia Mensual</h3>
+                    <div class="chart-wrapper"><canvas id="chartLine"></canvas></div>
+                </div>
+                <div>
+                    <h3 class="section-title">Comparativo por División</h3>
+                    <div class="chart-wrapper"><canvas id="chartDiv"></canvas></div>
+                </div>
+                <div>
+                    <h3 class="section-title">Comparativo por Categoría (Top 10)</h3>
+                    <div class="chart-wrapper"><canvas id="chartCat"></canvas></div>
+                </div>
+            </div>
+            
+            <!-- TABLA 1: Resumen por Tienda (Ventas y Saldos) -->
+            <div class="table-section">
+                <h3 class="section-title">Resumen por Tienda (Ventas vs Saldos)</h3>
                 <div class="table-container">
                     <table id="tablaGerencial">
                         <thead>
@@ -100,9 +114,28 @@
                 </div>
             </div>
 
-            <!-- TABLA 2: Detalle Operativo (División/Categoría) -->
-            <div class="card full">
-                <h3 class="card-title">Detalle de Ventas por División y Categoría</h3>
+            <!-- NUEVA TABLA 3: Resumen de Inventario por Grupo -->
+            <div class="table-section">
+                <h3 class="section-title">Resumen de Inventario (Saldos) por División y Categoría</h3>
+                <div class="table-container">
+                    <table id="tablaSaldosGrupo">
+                        <thead>
+                            <tr>
+                                <th>División</th>
+                                <th>Categoría</th>
+                                <th>Saldo Actual</th>
+                                <th>Saldo Anterior</th>
+                                <th>Diferencia de Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABLA 2: Detalle Operativo de Ventas -->
+            <div class="table-section">
+                <h3 class="section-title">Detalle de Ventas por División y Categoría</h3>
                 <div class="table-container">
                     <table id="tablaDetalle">
                         <thead>
