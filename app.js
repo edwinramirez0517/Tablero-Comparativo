@@ -190,8 +190,15 @@ function dibujarGraficos(vData, vTendenciaData) {
     const ctxLinea = document.getElementById('chartLine').getContext('2d');
     let mesesOrdenados = [...new Set(vTendenciaData.map(item => item.mes))].sort((a, b) => getMesNum(a) - getMesNum(b));
     
-    const totActual = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.actual, 0));
-    const totPasado = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.pasado, 0));
+    const resTot = {};
+    for (let i = 0; i < vTendenciaData.length; i++) {
+        const item = vTendenciaData[i];
+        if (!resTot[item.mes]) resTot[item.mes] = { act: 0, pas: 0 };
+        resTot[item.mes].act += item.actual;
+        resTot[item.mes].pas += item.pasado;
+    }
+    const totActual = mesesOrdenados.map(m => resTot[m] ? resTot[m].act : 0);
+    const totPasado = mesesOrdenados.map(m => resTot[m] ? resTot[m].pas : 0);
 
     if(graficoLinea) graficoLinea.destroy();
     graficoLinea = new Chart(ctxLinea, {
