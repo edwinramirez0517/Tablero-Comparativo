@@ -246,15 +246,21 @@ function dibujarGraficos(vData, vTendenciaData) {
 }
 
 function prepararDatosTablas(vData, sData) {
-    let tiendas = [...new Set([...vData.map(d => d.tienda), ...sData.map(d => d.tienda)])].sort();
-    stateTiendas.data = [];
-    tiendas.forEach(t => {
-        let vAct = vData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.actual, 0);
-        let vPas = vData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.pasado, 0);
-        let sAct = sData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.sAct, 0);
-        let sPas = sData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.sPas, 0);
-        if (vAct !== 0 || vPas !== 0 || sAct !== 0 || sPas !== 0) stateTiendas.data.push({ tienda: t, vAct, vPas, sAct, sPas });
+    let tiendasMap = {};
+    vData.forEach(d => {
+        if (!tiendasMap[d.tienda]) tiendasMap[d.tienda] = { vAct: 0, vPas: 0, sAct: 0, sPas: 0 };
+        tiendasMap[d.tienda].vAct += d.actual;
+        tiendasMap[d.tienda].vPas += d.pasado;
     });
+    sData.forEach(d => {
+        if (!tiendasMap[d.tienda]) tiendasMap[d.tienda] = { vAct: 0, vPas: 0, sAct: 0, sPas: 0 };
+        tiendasMap[d.tienda].sAct += d.sAct;
+        tiendasMap[d.tienda].sPas += d.sPas;
+    });
+    stateTiendas.data = Object.entries(tiendasMap)
+        .map(([tienda, vals]) => ({ tienda, ...vals }))
+        .filter(i => i.vAct !== 0 || i.vPas !== 0 || i.sAct !== 0 || i.sPas !== 0)
+        .sort((a, b) => a.tienda.localeCompare(b.tienda));
 
     let gruposMap = {};
     vData.forEach(d => { if (!gruposMap[d.grupo]) gruposMap[d.grupo] = { nombre: d.grupo, vAct: 0, vPas: 0, sAct: 0, sPas: 0 }; gruposMap[d.grupo].vAct += d.actual; gruposMap[d.grupo].vPas += d.pasado; });
