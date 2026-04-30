@@ -17,13 +17,12 @@
         }
         body { font-family: 'Montserrat', sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text); position: relative; min-height: 100vh; }
         
-        /* --- MARCA DE AGUA (Más grande y centrada) --- */
-        .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.15; z-index: -1; pointer-events: none; width: 85%; text-align: center; }
-        .watermark img { max-width: 100%; max-height: 80vh; object-fit: contain; }
+        /* --- MARCA DE AGUA --- */
+        .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.15; z-index: -1; pointer-events: none; width: 70%; text-align: center; }
+        .watermark img { max-width: 100%; height: auto; object-fit: contain; }
 
-        /* --- ENCABEZADO CON LOGO (Sin fondo blanco, más grande) --- */
+        /* --- ENCABEZADO CON LOGO --- */
         header { background-color: var(--primary); color: white; padding: 15px 30px; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        /* Se quitó el background y el border-radius para dejar el logo limpio */
         .logo-container { padding: 5px 20px 5px 0; display: flex; align-items: center; justify-content: center; height: 90px; margin-right: 25px; }
         .logo-container img { max-height: 80px; width: auto; object-fit: contain; }
         .header-titles { display: flex; flex-direction: column; }
@@ -66,17 +65,13 @@
         .chart-title::before { content: ""; display: block; width: 12px; height: 12px; background-color: var(--secondary); border-radius: 50%; }
         .chart-wrapper { position: relative; height: 400px; width: 100%; }
         
-        /* --- NUEVO SISTEMA DE TABLAS (Flujo natural, sin contenedor con max-height) --- */
-        
-        /* La barra de controles ahora se pega al tope de la pantalla al hacer scroll */
+        /* --- NUEVA ESTRUCTURA DE TABLAS FIJAS --- */
         .table-controls { 
             display: flex; justify-content: space-between; align-items: center; 
             background: var(--primary); padding: 12px 15px; color: white; flex-wrap: wrap; gap: 10px;
-            position: sticky; top: 0; z-index: 30; /* Pegado arriba, por encima de todo */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 6px 6px 0 0;
         }
         
-        /* Estilos específicos para la barra roja de grupos */
         #tab-grupos .table-controls { background-color: var(--secondary); }
         
         .table-controls select { padding: 5px; border-radius: 4px; border: none; font-weight: 600; font-size: 12px; color: #333;}
@@ -85,22 +80,43 @@
         #tab-grupos .btn-page { color: var(--secondary); }
         .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Contenedor que solo maneja el scroll horizontal, NO el vertical */
-        .table-responsive-wrapper { overflow-x: auto; background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 50px;}
-        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; min-width: 900px; }
-        
-        /* Los encabezados de la tabla se pegan JUSTO DEBAJO de la barra de controles */
-        thead th { 
-            position: sticky; top: 48px; /* Altura aprox de .table-controls. Ajustar si es necesario */
-            z-index: 20; background-color: #01186e; color: white; padding: 12px 10px; 
-            text-align: center; font-weight: 800; border: 1px solid #012094; border-top: none; text-transform: uppercase; font-size: 11px; 
-            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4); 
+        /* Contenedor principal de la tabla con scroll en ambas direcciones */
+        .table-responsive-wrapper { 
+            overflow: auto; /* Permite scroll X y Y */
+            max-height: 600px; /* Altura máxima de la tabla visible */
+            background: rgba(255,255,255,0.9); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
+            border: 1px solid #eee;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
         }
         
-        /* Fijar la primera columna horizontalmente */
-        tbody th, tbody td:first-child, thead th:first-child { position: sticky; left: 0; z-index: 15; text-align: left; border-right: 2px solid #ccc; }
-        /* La esquina superior izquierda debe tener el mayor z-index para no ser tapada al hacer scroll en diagonal */
-        thead tr:first-child th:first-child { z-index: 25; background-color: #01186e; color: white; border-top: none;} 
+        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; min-width: 900px; }
+        
+        /* Encabezados superiores FIJOS ARRIBA */
+        thead th { 
+            position: sticky; top: 0; /* Pegados arriba */
+            z-index: 20; 
+            background-color: #01186e; color: white; padding: 12px 10px; 
+            text-align: center; font-weight: 800; border-bottom: 1px solid #012094; border-right: 1px solid #012094;
+            text-transform: uppercase; font-size: 11px; 
+            /* Se quitó el borde superior doble para evitar cortes feos */
+        }
+        
+        /* Ajuste para la segunda fila de encabezados si existe */
+        thead tr:nth-child(2) th {
+            top: 39px; /* Esto asume que la primera fila de TH mide aprox 39px. Ajusta si se montan */
+            z-index: 19;
+        }
+
+        /* Primera columna FIJA A LA IZQUIERDA */
+        tbody th, tbody td:first-child, thead th:first-child { 
+            position: sticky; left: 0; 
+            z-index: 15; text-align: left; border-right: 2px solid #ccc; 
+        }
+        
+        /* La celda de la esquina superior izquierda debe tener el máximo z-index para quedarse encima de todo */
+        thead tr:first-child th:first-child { z-index: 30; background-color: #01186e; border-bottom: none;} 
         
         tbody td:first-child { background-color: #f8f9fa; font-weight: 700; color: var(--primary); }
         td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #f0f0f0; color: #444; font-weight: 600; background-color: #fff;}
@@ -108,10 +124,6 @@
         .pos { color: #00A651 !important; font-weight: 800; background: rgba(0, 166, 81, 0.1); } 
         .neg { color: var(--secondary) !important; font-weight: 800; background: rgba(225, 37, 27, 0.1); } 
 
-        /* Media query para ajustar el sticky top en móviles si la barra de controles crece */
-        @media (max-width: 600px) {
-            thead th { top: 85px; } /* Ajuste para cuando la barra de controles ocupa 2 líneas */
-        }
     </style>
 </head>
 <body>
@@ -184,12 +196,12 @@
                         <thead>
                             <tr>
                                 <th rowspan="2" style="vertical-align: bottom;">Tienda</th>
-                                <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
-                                <th colspan="3">INVENTARIO (Saldos)</th>
+                                <th colspan="3">VENTAS (Unidades)</th>
+                                <th colspan="3" style="border-right: none;">INVENTARIO (Saldos)</th>
                             </tr>
                             <tr>
-                                <th>Venta Actual</th><th>Venta Pasada</th><th style="border-right: 2px solid #fff;">Dif. Venta</th>
-                                <th>Saldo Actual</th><th>Saldo Pasado</th><th>Dif. Saldo</th>
+                                <th>Venta Actual</th><th>Venta Pasada</th><th>Dif. Venta</th>
+                                <th>Saldo Actual</th><th>Saldo Pasado</th><th style="border-right: none;">Dif. Saldo</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -198,21 +210,21 @@
             </div>
 
             <div id="tab-grupos" class="tab-content">
-                <div class="table-controls">
+                <div class="table-controls" style="background-color: var(--secondary);">
                     <div>Mostrar <select id="limit-grupos" onchange="cambiarLimite('grupos')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
-                    <div><span class="pagination-info" id="info-grupos">Mostrando 0 de 0</span><button class="btn-page" onclick="cambiarPagina('grupos', -1)">&#9664; Ant</button><button class="btn-page" onclick="cambiarPagina('grupos', 1)">Sig &#9654;</button></div>
+                    <div><span class="pagination-info" id="info-grupos">Mostrando 0 de 0</span><button class="btn-page" style="color:var(--secondary);" onclick="cambiarPagina('grupos', -1)">&#9664; Ant</button><button class="btn-page" style="color:var(--secondary);" onclick="cambiarPagina('grupos', 1)">Sig &#9654;</button></div>
                 </div>
                 <div class="table-responsive-wrapper">
                     <table id="tablaDetalleGrupos">
                         <thead>
                             <tr>
                                 <th rowspan="2" style="vertical-align: bottom; width: 30%;">Grupo (Extraído de CSV)</th>
-                                <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
-                                <th colspan="3">INVENTARIO (Saldos)</th>
+                                <th colspan="3">VENTAS (Unidades)</th>
+                                <th colspan="3" style="border-right: none;">INVENTARIO (Saldos)</th>
                             </tr>
                             <tr>
-                                <th>Venta Actual</th><th>Venta Pasada</th><th style="border-right: 2px solid #fff;">Dif. Venta</th>
-                                <th>Saldo Actual</th><th>Saldo Pasado</th><th>Dif. Saldo</th>
+                                <th>Venta Actual</th><th>Venta Pasada</th><th>Dif. Venta</th>
+                                <th>Saldo Actual</th><th>Saldo Pasado</th><th style="border-right: none;">Dif. Saldo</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
