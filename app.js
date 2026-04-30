@@ -4,7 +4,8 @@ let datosVentasRaw = [];
 let datosSaldosRaw = [];
 let fMes = 'Todos', fTienda = 'Todos', fDiv = 'Todos', fCat = 'Todos';
 
-const mesesStr = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+// Diccionario de meses para forzar orden real
+const mesesDic = { 'Enero':1, 'Febrero':2, 'Marzo':3, 'Abril':4, 'Mayo':5, 'Junio':6, 'Julio':7, 'Agosto':8, 'Septiembre':9, 'Octubre':10, 'Noviembre':11, 'Diciembre':12 };
 
 let stateTiendas = { data: [], page: 1, limit: 25 };
 let stateGrupos = { data: [], page: 1, limit: 25 };
@@ -15,14 +16,13 @@ function formatNumber(num) {
 }
 
 function openTab(evt, tabName) {
-    let i, tabcontent, tablinks;
-    tabcontent = document.getElementsByClassName("tab-content");
-    for (i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
-    tablinks = document.getElementsByClassName("tab-button");
-    for (i = 0; i < tablinks.length; i++) tablinks[i].className = tablinks[i].className.replace(" active", "");
+    let tabcontent = document.getElementsByClassName("tab-content");
+    for (let i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
+    let tablinks = document.getElementsByClassName("tab-button");
+    for (let i = 0; i < tablinks.length; i++) tablinks[i].className = tablinks[i].className.replace(" active", "");
     document.getElementById(tabName).style.display = "block";
     evt.currentTarget.className += " active";
-    if(tabName === 'tab-graficos') actualizarTablero(false); // Solo redibuja, no resetea filtros
+    if(tabName === 'tab-graficos') actualizarTablero(false);
 }
 
 function cargarVentas() {
@@ -42,10 +42,12 @@ function cargarVentas() {
 
                     for(let c = 7; c < fila.length; c++) {
                         if (metricasRow[c] === 'Venta_Und_Anterior') {
-                            let mes = mesesRow[c];
+                            let mes = mesesRow[c] ? mesesRow[c].trim() : "";
                             let pasado = parseFloat(fila[c]) || 0;
                             let actual = parseFloat(fila[c+1]) || 0; 
-                            if (pasado !== 0 || actual !== 0) {
+                            if ((pasado !== 0 || actual !== 0) && mes !== "") {
+                                // Aseguramos que el mes tenga la primera letra mayúscula para que coincida con el diccionario
+                                mes = mes.charAt(0).toUpperCase() + mes.slice(1).toLowerCase();
                                 procesado.push({ mes, tienda, division, categoria, grupo: grupoReal, pasado, actual });
                             }
                         }
@@ -65,10 +67,8 @@ function cargarSaldos() {
                 let procesado = [];
                 resultados.data.forEach(fila => {
                     if(fila.Name) {
-                        // INVERSIÓN SOLICITADA DE SALDOS ACTUAL/ANTERIOR
                         let sAct = parseFloat(fila.Saldo_Total_Actual) || 0; 
                         let sPas = parseFloat(fila.Saldo_Total_Anterior) || 0; 
-                        
                         const grupoReal = fila.Grupo || fila.Group || (fila.Division + " - " + fila.Categoria); 
                         procesado.push({ tienda: fila.Name, division: fila.Division, categoria: fila.Categoria, grupo: grupoReal, sAct: sAct, sPas: sPas });
                     }
@@ -82,7 +82,6 @@ function cargarSaldos() {
 Promise.all([cargarVentas(), cargarSaldos()]).then(archivos => {
     datosVentasRaw = archivos[0];
     datosSaldosRaw = archivos[1];
-    
     document.getElementById('loading').style.display = 'none';
     document.getElementById('kpi-container').style.display = 'grid';
     document.getElementById('filtros-container').style.display = 'flex';
@@ -96,7 +95,6 @@ Promise.all([cargarVentas(), cargarSaldos()]).then(archivos => {
 function inicializarFiltrosDOM() {
     ['f-mes', 'f-tienda', 'f-division', 'f-categoria'].forEach(id => {
         document.getElementById(id).addEventListener('change', (e) => {
-            // Actualizar variables globales de estado
             if(id === 'f-mes') fMes = e.target.value;
             if(id === 'f-tienda') fTienda = e.target.value;
             if(id === 'f-division') fDiv = e.target.value;
@@ -106,12 +104,9 @@ function inicializarFiltrosDOM() {
     });
 }
 
-// LÓGICA DE FILTROS EN CASCADA
 function actualizarFiltrosDisponibles(vFiltradas) {
-    let mesesAct = [...new Set(datosVentasRaw.map(d => d.mes))].sort((a, b) => mesesStr.indexOf(a) - mesesStr.indexOf(b));
+    let mesesAct = [...new Set(datosVentasRaw.map(d => d.mes))].sort((a, b) => (mesesDic[a] || 99) - (mesesDic[b] || 99));
     let tiendasAct = [...new Set(datosVentasRaw.map(d => d.tienda))].sort();
-    
-    // Las divisiones y categorías se basan en la selección actual para no mostrar opciones vacías
     let divAct = fTienda === 'Todos' ? [...new Set(datosVentasRaw.map(d => d.division))] : [...new Set(vFiltradas.map(d => d.division))];
     let catAct = (fTienda === 'Todos' && fDiv === 'Todos') ? [...new Set(datosVentasRaw.map(d => d.categoria))] : [...new Set(vFiltradas.map(d => d.categoria))];
 
@@ -135,7 +130,6 @@ function llenarSelectManteniendoValor(id, opciones, valorActual) {
 let graficoLinea, graficoDiv, graficoCat;
 
 function actualizarTablero(cascada = false) {
-    // Filtrado Principal
     let vFiltradas = datosVentasRaw.filter(d => (fMes === 'Todos' || d.mes === fMes) && (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
     let vTend = datosVentasRaw.filter(d => (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
     let sFiltrados = datosSaldosRaw.filter(d => (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
@@ -169,20 +163,16 @@ function actualizarKPIs(vData, sData) {
     divSDif.className = 'kpi-dif ' + (sDif >= 0 ? 'pos' : 'neg');
 }
 
+// Configuración Base de Gráficos (Ajustada para móvil y legibilidad)
 const configBaseGrafico = {
     responsive: true, maintainAspectRatio: false,
-    layout: { padding: { top: 30, right: 30, bottom: 0, left: 30 } }, // MÁS PADDING PARA EVITAR CORTES
+    layout: { padding: { top: 40, right: 20, bottom: 0, left: 20 } },
     scales: {
-        x: { grid: { display: false }, ticks: { font: { family: 'Montserrat', weight: 'bold' } } },
+        x: { grid: { display: false }, ticks: { font: { family: 'Montserrat', weight: 'bold', size: 10 } } },
         y: { display: false, grid: { display: false }, min: 0 }
     },
     plugins: {
-        legend: { position: 'top', labels: { font: { family: 'Montserrat', weight: 'bold' } } },
-        datalabels: {
-            color: '#444', anchor: 'end', align: 'top', offset: 2,
-            font: { family: 'Montserrat', weight: '800', size: 10 },
-            formatter: function(value) { return formatNumber(value); }
-        }
+        legend: { position: 'top', labels: { font: { family: 'Montserrat', weight: 'bold' } } }
     }
 };
 
@@ -190,18 +180,16 @@ function dibujarGraficos(vData, vTendenciaData) {
     
     // --- LÍNEA DE TIEMPO ---
     const ctxLinea = document.getElementById('chartLine').getContext('2d');
+    let mesesOrdenados = [...new Set(vTendenciaData.map(item => item.mes))].sort((a, b) => (mesesDic[a] || 99) - (mesesDic[b] || 99));
     
-    // Solo meses reales existentes en la data filtrada, ordenados cronológicamente
-    let mesesPresentes = [...new Set(vTendenciaData.map(item => item.mes))].sort((a, b) => mesesStr.indexOf(a) - mesesStr.indexOf(b));
-    
-    const totActual = mesesPresentes.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.actual, 0));
-    const totPasado = mesesPresentes.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.pasado, 0));
+    const totActual = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.actual, 0));
+    const totPasado = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.pasado, 0));
 
     if(graficoLinea) graficoLinea.destroy();
     graficoLinea = new Chart(ctxLinea, {
         type: 'line',
         data: {
-            labels: mesesPresentes,
+            labels: mesesOrdenados,
             datasets: [
                 { label: 'Año Actual', data: totActual, borderColor: '#012094', backgroundColor: '#012094', tension: 0.3, borderWidth: 4, pointRadius: 5 },
                 { label: 'Año Pasado', data: totPasado, borderColor: '#E1251B', backgroundColor: '#E1251B', tension: 0.3, borderWidth: 4, pointRadius: 5 }
@@ -209,26 +197,31 @@ function dibujarGraficos(vData, vTendenciaData) {
         }, 
         options: {
             ...configBaseGrafico,
-            layout: { padding: { top: 40, right: 45, bottom: 20, left: 45 } }, // Padding generoso
+            layout: { padding: { top: 40, right: 30, bottom: 20, left: 30 } },
             plugins: {
                 ...configBaseGrafico.plugins,
                 datalabels: {
                     color: function(context) { return context.dataset.borderColor; },
-                    // ETIQUETAS SEPARADAS: Dataset 0 (Azul) arriba, Dataset 1 (Rojo) abajo
                     anchor: function(context) { return context.datasetIndex === 0 ? 'end' : 'start'; },
                     align: function(context) { return context.datasetIndex === 0 ? 'top' : 'bottom'; },
-                    offset: 8, font: { family: 'Montserrat', weight: '800', size: 11 },
+                    offset: 6, font: { family: 'Montserrat', weight: '800', size: 11 },
                     formatter: function(value) { return formatNumber(value); }
                 }
             }
         }
     });
     
-    // --- TOP BARRAS ---
+    // Configuración para que las etiquetas de las barras estén verticales (rotation: -90)
     const configBarrasTop = JSON.parse(JSON.stringify(configBaseGrafico));
-    configBarrasTop.scales.x.ticks.maxRotation = 0; // Etiquetas X horizontales
-    configBarrasTop.scales.x.ticks.minRotation = 0;
+    configBarrasTop.layout.padding = { top: 60, right: 10, bottom: 0, left: 10 };
+    configBarrasTop.plugins.datalabels = {
+        color: '#444', anchor: 'end', align: 'end', offset: 5,
+        font: { family: 'Montserrat', weight: '800', size: 10 },
+        rotation: -90, // ETIQUETAS VERTICALES
+        formatter: function(value) { return formatNumber(value); }
+    };
 
+    // --- TOP DIVISIONES ---
     const ctxDiv = document.getElementById('chartDiv').getContext('2d');
     let resDiv = {};
     vData.forEach(d => { if (!resDiv[d.division]) resDiv[d.division] = { act: 0, pas: 0 }; resDiv[d.division].act += d.actual; resDiv[d.division].pas += d.pasado; });
@@ -237,6 +230,7 @@ function dibujarGraficos(vData, vTendenciaData) {
     if(graficoDiv) graficoDiv.destroy();
     graficoDiv = new Chart(ctxDiv, { type: 'bar', data: { labels: t10Div.map(d => d.name), datasets: [ { label: 'Venta Actual', data: t10Div.map(d => d.act), backgroundColor: '#012094' }, { label: 'Venta Pasada', data: t10Div.map(d => d.pas), backgroundColor: '#E1251B' } ] }, options: configBarrasTop });
 
+    // --- TOP CATEGORÍAS ---
     const ctxCat = document.getElementById('chartCat').getContext('2d');
     let resCat = {};
     vData.forEach(d => { if (!resCat[d.categoria]) resCat[d.categoria] = { act: 0, pas: 0 }; resCat[d.categoria].act += d.actual; resCat[d.categoria].pas += d.pasado; });
@@ -246,7 +240,6 @@ function dibujarGraficos(vData, vTendenciaData) {
     graficoCat = new Chart(ctxCat, { type: 'bar', data: { labels: t10Cat.map(d => d.name), datasets: [ { label: 'Venta Actual', data: t10Cat.map(d => d.act), backgroundColor: '#012094' }, { label: 'Venta Pasada', data: t10Cat.map(d => d.pas), backgroundColor: '#E1251B' } ] }, options: configBarrasTop });
 }
 
-// 7. PREPARAR DATOS Y PAGINACIÓN
 function prepararDatosTablas(vData, sData) {
     let tiendas = [...new Set([...vData.map(d => d.tienda), ...sData.map(d => d.tienda)])].sort();
     stateTiendas.data = [];
