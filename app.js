@@ -1,4 +1,6 @@
-Chart.register(ChartDataLabels);
+if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+    Chart.register(ChartDataLabels);
+}
 
 let datosVentasRaw = [];
 let datosSaldosRaw = [];
@@ -86,18 +88,20 @@ function cargarSaldos() {
     });
 }
 
-Promise.all([cargarVentas(), cargarSaldos()]).then(archivos => {
-    datosVentasRaw = archivos[0];
-    datosSaldosRaw = archivos[1];
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('kpi-container').style.display = 'grid';
-    document.getElementById('filtros-wrapper').style.display = 'flex';
-    document.getElementById('tabs-container').style.display = 'flex';
-    document.getElementById('graficos-container').style.display = 'block';
-    
-    inicializarFiltrosDOM();
-    actualizarTablero(true);
-}).catch(console.error);
+if (typeof document !== 'undefined') {
+    Promise.all([cargarVentas(), cargarSaldos()]).then(archivos => {
+        datosVentasRaw = archivos[0];
+        datosSaldosRaw = archivos[1];
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('kpi-container').style.display = 'grid';
+        document.getElementById('filtros-wrapper').style.display = 'flex';
+        document.getElementById('tabs-container').style.display = 'flex';
+        document.getElementById('graficos-container').style.display = 'block';
+
+        inicializarFiltrosDOM();
+        actualizarTablero(true);
+    }).catch(console.error);
+}
 
 function inicializarFiltrosDOM() {
     ['f-mes', 'f-tienda', 'f-division', 'f-categoria'].forEach(id => {
@@ -302,4 +306,8 @@ function renderTablaGrupos() {
     const startIndex = (stateGrupos.page - 1) * stateGrupos.limit;
     stateGrupos.data.slice(startIndex, startIndex + stateGrupos.limit).forEach(item => tbody.appendChild(crearFila(item, 'nombre')));
     document.getElementById('info-grupos').innerText = `Página ${stateGrupos.page} de ${Math.ceil(stateGrupos.data.length / stateGrupos.limit) || 1} (${stateGrupos.data.length} grupos)`;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { formatNumber, getMesNum };
 }
