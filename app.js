@@ -138,12 +138,17 @@ function llenarSelectManteniendoValor(id, opciones, valorActual) {
 
 let graficoLinea, graficoDiv, graficoCat;
 
-function actualizarTablero(cascada = false) {
-    let vFiltradas = datosVentasRaw.filter(d => (fMes === 'Todos' || d.mes === fMes) && (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
-    let vTend = datosVentasRaw.filter(d => (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
-    let sFiltrados = datosSaldosRaw.filter(d => (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
+const matchesMes = d => fMes === 'Todos' || d.mes === fMes;
+const matchesTienda = d => fTienda === 'Todos' || d.tienda === fTienda;
+const matchesDiv = d => fDiv === 'Todos' || d.division === fDiv;
+const matchesCat = d => fCat === 'Todos' || d.categoria === fCat;
 
-    if(cascada) actualizarFiltrosDisponibles(datosVentasRaw.filter(d => (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv)));
+function actualizarTablero(cascada = false) {
+    let vFiltradas = datosVentasRaw.filter(d => matchesMes(d) && matchesTienda(d) && matchesDiv(d) && matchesCat(d));
+    let vTend = datosVentasRaw.filter(d => matchesTienda(d) && matchesDiv(d) && matchesCat(d));
+    let sFiltrados = datosSaldosRaw.filter(d => matchesTienda(d) && matchesDiv(d) && matchesCat(d));
+
+    if(cascada) actualizarFiltrosDisponibles(datosVentasRaw.filter(d => matchesTienda(d) && matchesDiv(d)));
 
     actualizarKPIs(vFiltradas, sFiltrados);
     dibujarGraficos(vFiltradas, vTend);
