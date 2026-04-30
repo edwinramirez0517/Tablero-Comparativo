@@ -4,7 +4,6 @@ let datosVentasRaw = [];
 let datosSaldosRaw = [];
 let fMes = 'Todos', fTienda = 'Todos', fDiv = 'Todos', fCat = 'Todos';
 
-// Diccionario estricto para meses
 const mesesVal = { 'enero':1, 'febrero':2, 'marzo':3, 'abril':4, 'mayo':5, 'junio':6, 'julio':7, 'agosto':8, 'septiembre':9, 'octubre':10, 'noviembre':11, 'diciembre':12 };
 
 let stateTiendas = { data: [], page: 1, limit: 25 };
@@ -75,7 +74,6 @@ function cargarSaldos() {
                 let procesado = [];
                 resultados.data.forEach(fila => {
                     if(fila.Name) {
-                        // Corrección Saldos Invertidos: Actual = Saldo_Total_Actual
                         let sAct = parseFloat(fila.Saldo_Total_Actual) || 0; 
                         let sPas = parseFloat(fila.Saldo_Total_Anterior) || 0; 
                         const grupoReal = fila.Grupo || fila.Group || (fila.Division + " - " + fila.Categoria); 
@@ -174,10 +172,9 @@ function actualizarKPIs(vData, sData) {
     divSDif.className = 'kpi-dif ' + (sDif >= 0 ? 'pos' : 'neg');
 }
 
-// Configuración Base Gráficos - Fondo transparente
 const configBaseGrafico = {
     responsive: true, maintainAspectRatio: false,
-    layout: { padding: { top: 30, right: 20, bottom: 0, left: 20 } },
+    layout: { padding: { top: 40, right: 20, bottom: 0, left: 20 } },
     scales: {
         x: { grid: { display: false }, ticks: { font: { family: 'Montserrat', weight: 'bold', size: 10 } } },
         y: { display: false, grid: { display: false }, min: 0 }
@@ -189,7 +186,7 @@ const configBaseGrafico = {
 
 function dibujarGraficos(vData, vTendenciaData) {
     
-    // --- LÍNEA DE TIEMPO (Orden Cronológico Forzado) ---
+    // --- LÍNEA DE TIEMPO ---
     const ctxLinea = document.getElementById('chartLine').getContext('2d');
     let mesesOrdenados = [...new Set(vTendenciaData.map(item => item.mes))].sort((a, b) => getMesNum(a) - getMesNum(b));
     
@@ -213,7 +210,7 @@ function dibujarGraficos(vData, vTendenciaData) {
                 ...configBaseGrafico.plugins,
                 datalabels: {
                     color: function(context) { return context.dataset.borderColor; },
-                    anchor: function(context) { return context.datasetIndex === 0 ? 'end' : 'start'; }, // Actual arriba, Pasado abajo
+                    anchor: function(context) { return context.datasetIndex === 0 ? 'end' : 'start'; },
                     align: function(context) { return context.datasetIndex === 0 ? 'top' : 'bottom'; },
                     offset: 6, font: { family: 'Montserrat', weight: '800', size: 11 },
                     formatter: function(value) { return formatNumber(value); }
@@ -222,13 +219,12 @@ function dibujarGraficos(vData, vTendenciaData) {
         }
     });
     
-    // Configuración Barras - Etiquetas a -45 grados
     const configBarrasTop = JSON.parse(JSON.stringify(configBaseGrafico));
     configBarrasTop.layout.padding = { top: 60, right: 10, bottom: 0, left: 10 };
     configBarrasTop.plugins.datalabels = {
         color: '#444', anchor: 'end', align: 'end', offset: 5,
         font: { family: 'Montserrat', weight: '800', size: 10 },
-        rotation: -45, // ETIQUETAS A 45 GRADOS
+        rotation: -45,
         formatter: function(value) { return formatNumber(value); }
     };
 
@@ -290,7 +286,7 @@ function crearFila(item, keyName) {
     let difV = item.vAct - item.vPas;
     let difS = item.sAct - item.sPas;
     let tr = document.createElement('tr');
-    tr.innerHTML = `<td>${item[keyName]}</td><td>${formatNumber(item.vAct)}</td><td>${formatNumber(item.vPas)}</td><td class="${difV >= 0 ? 'pos' : 'neg'}">${difV > 0 ? '+' : ''}${formatNumber(difV)}</td><td>${formatNumber(item.sAct)}</td><td>${formatNumber(item.sPas)}</td><td class="${difS >= 0 ? 'pos' : 'neg'}">${difS > 0 ? '+' : ''}${formatNumber(difS)}</td>`;
+    tr.innerHTML = `<td>${item[keyName]}</td><td>${formatNumber(item.vAct)}</td><td>${formatNumber(item.vPas)}</td><td class="${difV >= 0 ? 'pos' : 'neg'}" style="border-right: 2px solid #eee;">${difV > 0 ? '+' : ''}${formatNumber(difV)}</td><td>${formatNumber(item.sAct)}</td><td>${formatNumber(item.sPas)}</td><td class="${difS >= 0 ? 'pos' : 'neg'}">${difS > 0 ? '+' : ''}${formatNumber(difS)}</td>`;
     return tr;
 }
 
