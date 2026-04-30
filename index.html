@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tablero Comparativo - El Compadre</title>
+    <title>Tablero Comparativo Gerencial - El Compadre</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -11,41 +11,65 @@
         :root { 
             --primary: #012094; /* Azul Compadre */
             --secondary: #E1251B; /* Rojo Compadre */
-            --bg: #ffffff; /* Fondo completamente blanco */
+            --bg: #ffffff; 
             --text: #333333; 
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text); }
         
         /* Encabezado */
         header { background-color: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        header h1 { margin: 0; font-size: 22px; font-weight: bold; }
-        header .subtitle { font-size: 14px; opacity: 0.9; }
+        header h1 { margin: 0; font-size: 20px; font-weight: bold; }
         
         .container { padding: 20px 30px; }
         
-        /* Filtros */
-        .filters { display: flex; gap: 15px; padding: 15px 0; border-bottom: 2px solid #f0f0f0; margin-bottom: 20px; flex-wrap: wrap; }
-        .filter-group { display: flex; flex-direction: column; min-width: 160px; }
-        .filter-group label { font-size: 12px; font-weight: bold; color: var(--primary); margin-bottom: 5px; }
-        .filter-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+        /* Filtros Globales */
+        .filters { display: flex; gap: 15px; padding: 15px 0; border-bottom: 1px solid #eee; margin-bottom: 10px; flex-wrap: wrap; }
+        .filter-group { display: flex; flex-direction: column; min-width: 150px; }
+        .filter-group label { font-size: 11px; font-weight: bold; color: var(--primary); margin-bottom: 3px; }
+        .filter-group select { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
         
-        /* Gráficos (Sin recuadros) */
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; margin-bottom: 40px; }
+        /* PESTAÑAS (Tabs) INTERACTIVAS */
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #eee; }
+        .tab-button { padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 14px; font-weight: bold; color: #555; transition: 0.3s; }
+        .tab-button:hover { color: var(--primary); background-color: #f9f9f9; }
+        .tab-button.active { color: var(--primary); border-bottom-color: var(--primary); }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Contenedores de Gráficos */
+        .grid-charts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; margin-bottom: 30px; }
         .full-width { grid-column: span 2; }
-        .section-title { font-size: 16px; font-weight: bold; color: var(--primary); margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid var(--secondary); display: inline-block; padding-bottom: 5px; }
+        .chart-title { font-size: 15px; font-weight: bold; color: var(--primary); margin: 0 0 10px 0; border-bottom: 2px solid var(--secondary); display: inline-block; padding-bottom: 3px; }
         .chart-wrapper { position: relative; height: 350px; width: 100%; }
         
-        /* Tablas Gerenciales */
-        .table-section { margin-bottom: 50px; }
-        .table-container { max-height: 400px; overflow-y: auto; border: 1px solid #eee; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th, td { padding: 10px 8px; text-align: right; border-bottom: 1px solid #eee; }
-        th { background-color: var(--primary); color: white; position: sticky; top: 0; z-index: 1; font-weight: 600; }
-        th:first-child, td:first-child { text-align: left; font-weight: bold; color: var(--primary); }
+        /* Tablas Gerenciales - CORRECCIÓN DE ESTILOS */
+        .table-section { margin-bottom: 40px; }
+        .table-container { max-height: 500px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px;}
+        table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
+        
+        /* Fijar encabezados */
+        thead { position: sticky; top: 0; z-index: 10; }
+        
+        /* Estilo de encabezados (CORREGIDO: Blanco sobre azul oscuro) */
+        th { background-color: var(--primary); color: white !important; padding: 8px 5px; text-align: right; font-weight: 600; border: 1px solid #01186e; }
+        
+        /* Primera columna (Nombres) siempre visible y alineada a la izquierda */
+        th:first-child, td:first-child { text-align: left; font-weight: bold; color: var(--primary); position: sticky; left: 0; background-color: #fff; z-index: 5; border-right: 2px solid #eee; }
+        th:first-child { background-color: var(--primary); color: white !important; z-index: 11; }
+        
+        td { padding: 8px 5px; text-align: right; border-bottom: 1px solid #eee; color: #333; }
+        
+        /* Sub-encabezados oscuros para mejor contraste */
+        .dark-header { background-color: #01186e; }
+
+        /* Colores de diferencia */
         .pos { color: #00A651; font-weight: bold; } 
         .neg { color: var(--secondary); font-weight: bold; } 
-        .header-ventas { background-color: #01186e; } 
-        .header-saldos { background-color: #012094; } 
+        
+        /* Anchos de columna fijos */
+        .col-tienda { width: 25%; }
+        .col-data { width: 12.5%; }
     </style>
 </head>
 <body>
@@ -53,16 +77,16 @@
     <header>
         <div>
             <h1>EL COMPADRE</h1>
-            <div class="subtitle">Tablero Comparativo Gerencial - Archivo Único Integrado</div>
+            <div class="subtitle">Tablero Comparativo Gerencial Interactivo</div>
         </div>
     </header>
 
     <div class="container">
-        <div id="loading" style="text-align:center; padding:20px; font-weight:bold; color:var(--primary); font-size: 18px;">
-            Cargando y cruzando bases de datos, por favor espera...
+        <div id="loading" style="text-align:center; padding:20px; font-weight:bold; color:var(--primary);">
+            Cargando y procesando información logóstica, por favor espera...
         </div>
 
-        <!-- Filtros -->
+        <!-- Filtros Globales (Afectan a todas las pestañas) -->
         <div class="filters" id="filtros-container" style="display:none;">
             <div class="filter-group"><label>MES</label><select id="f-mes"><option value="Todos">-- Todos --</option></select></div>
             <div class="filter-group"><label>TIPO TIENDA</label><select id="f-tipo"><option value="Todos">-- Todos --</option></select></div>
@@ -71,84 +95,82 @@
             <div class="filter-group"><label>CATEGORÍA</label><select id="f-categoria"><option value="Todos">-- Todas --</option></select></div>
         </div>
 
+        <!-- NAVEGACIÓN POR PESTAÑAS (TABS) -->
+        <div class="tabs" id="tabs-container" style="display:none;">
+            <button class="tab-button active" onclick="openTab(event, 'tab-graficos')">Resumen Visual</button>
+            <button class="tab-button" onclick="openTab(event, 'tab-tiendas')">Detalle por Tienda</button>
+            <button class="tab-button" onclick="openTab(event, 'tab-grupos')">Detalle por Grupo (Div/Cat)</button>
+        </div>
+
         <div id="graficos-container" style="display:none;">
             
-            <!-- Gráficos -->
-            <div class="grid">
-                <div class="full-width">
-                    <h3 class="section-title">Tendencia Mensual</h3>
-                    <div class="chart-wrapper"><canvas id="chartLine"></canvas></div>
-                </div>
-                <div>
-                    <h3 class="section-title">Comparativo por División</h3>
-                    <div class="chart-wrapper"><canvas id="chartDiv"></canvas></div>
-                </div>
-                <div>
-                    <h3 class="section-title">Comparativo por Categoría (Top 10)</h3>
-                    <div class="chart-wrapper"><canvas id="chartCat"></canvas></div>
-                </div>
-            </div>
-            
-            <!-- TABLA 1: Resumen por Tienda (Ventas y Saldos) -->
-            <div class="table-section">
-                <h3 class="section-title">Resumen por Tienda (Ventas vs Saldos)</h3>
-                <div class="table-container">
-                    <table id="tablaGerencial">
-                        <thead>
-                            <tr>
-                                <th rowspan="2" style="vertical-align: bottom;">Tienda</th>
-                                <th colspan="3" class="header-ventas" style="text-align: center; border-right: 2px solid white;">VENTAS (Unidades)</th>
-                                <th colspan="3" class="header-saldos" style="text-align: center;">INVENTARIO (Saldos)</th>
-                            </tr>
-                            <tr>
-                                <th class="header-ventas">Año Actual</th>
-                                <th class="header-ventas">Año Pasado</th>
-                                <th class="header-ventas" style="border-right: 2px solid white;">Dif. Venta</th>
-                                <th class="header-saldos">Saldo Actual</th>
-                                <th class="header-saldos">Saldo Pasado</th>
-                                <th class="header-saldos">Dif. Saldo</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+            <!-- PESTAÑA 1: GRÁFICOS CORREGIDOS -->
+            <div id="tab-graficos" class="tab-content active">
+                <div class="grid-charts">
+                    <div class="full-width">
+                        <h3 class="chart-title">Tendencia Mensual (Comparativo Temporal)</h3>
+                        <div class="chart-wrapper"><canvas id="chartLine"></canvas></div>
+                    </div>
+                    <div>
+                        <h3 class="chart-title">Top Divisiones (Venta Actual vs Pasada)</h3>
+                        <div class="chart-wrapper"><canvas id="chartDiv"></canvas></div>
+                    </div>
+                    <div>
+                        <h3 class="chart-title">Top 10 Categorías (Venta Actual vs Pasada)</h3>
+                        <div class="chart-wrapper"><canvas id="chartCat"></canvas></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- NUEVA TABLA 3: Resumen de Inventario por Grupo -->
-            <div class="table-section">
-                <h3 class="section-title">Resumen de Inventario (Saldos) por División y Categoría</h3>
-                <div class="table-container">
-                    <table id="tablaSaldosGrupo">
-                        <thead>
-                            <tr>
-                                <th>División</th>
-                                <th>Categoría</th>
-                                <th>Saldo Actual</th>
-                                <th>Saldo Anterior</th>
-                                <th>Diferencia de Saldo</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+            <!-- PESTAÑA 2: TABLA GERENCIAL DE TIENDAS -->
+            <div id="tab-tiendas" class="tab-content">
+                <div class="table-section">
+                    <div class="table-container">
+                        <table id="tablaGerencialTiendas">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" class="col-tienda" style="vertical-align: bottom;">Tienda</th>
+                                    <th colspan="3" class="dark-header" style="text-align: center; border-right: 2px solid white;">VENTAS (Unidades)</th>
+                                    <th colspan="3" style="text-align: center;">INVENTARIO (Saldos)</th>
+                                </tr>
+                                <tr>
+                                    <th class="col-data dark-header">Año Actual</th>
+                                    <th class="col-data dark-header">Año Pasado</th>
+                                    <th class="col-data dark-header pos" style="border-right: 2px solid white;">Dif. Venta</th>
+                                    <th class="col-data">Saldo Actual</th>
+                                    <th class="col-data">Saldo Pasado</th>
+                                    <th class="col-data neg">Dif. Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <!-- TABLA 2: Detalle Operativo de Ventas -->
-            <div class="table-section">
-                <h3 class="section-title">Detalle de Ventas por División y Categoría</h3>
-                <div class="table-container">
-                    <table id="tablaDetalle">
-                        <thead>
-                            <tr>
-                                <th>División</th>
-                                <th>Categoría</th>
-                                <th>Venta Año Actual</th>
-                                <th>Venta Año Pasado</th>
-                                <th>Diferencia</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+            <!-- PESTAÑA 3: TABLA DETALLADA POR GRUPO (Unificada) -->
+            <div id="tab-grupos" class="tab-content">
+                <div class="table-section">
+                    <div class="table-container">
+                        <table id="tablaDetalleGrupos">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" style="width: 20%; vertical-align: bottom;">Grupo (División / Categoría)</th>
+                                    <th colspan="3" class="dark-header" style="text-align: center; border-right: 2px solid white;">VENTAS (Unidades)</th>
+                                    <th colspan="3" style="text-align: center;">INVENTARIO (Saldos)</th>
+                                </tr>
+                                <tr>
+                                    <th class="dark-header" style="width: 13.3%;">Año Actual</th>
+                                    <th class="dark-header" style="width: 13.3%;">Año Pasado</th>
+                                    <th class="dark-header pos" style="width: 13.3%; border-right: 2px solid white;">Dif. Venta</th>
+                                    <th style="width: 13.3%;">Saldo Actual</th>
+                                    <th style="width: 13.3%;">Saldo Pasado</th>
+                                    <th class="neg" style="width: 13.3%;">Dif. Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
