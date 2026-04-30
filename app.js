@@ -6,7 +6,6 @@ let fMes = 'Todos', fTienda = 'Todos', fDiv = 'Todos', fCat = 'Todos';
 
 const mesesVal = { 'enero':1, 'febrero':2, 'marzo':3, 'abril':4, 'mayo':5, 'junio':6, 'julio':7, 'agosto':8, 'septiembre':9, 'octubre':10, 'noviembre':11, 'diciembre':12 };
 
-// Manejador centralizado de estados de tablas
 const state = {
     divisiones: { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenDivisiones', label: 'divisiones' },
     categorias: { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenCategorias', label: 'categorías' },
@@ -99,7 +98,6 @@ Promise.all([cargarVentas(), cargarSaldos()]).then(archivos => {
     datosVentasRaw = archivos[0];
     datosSaldosRaw = archivos[1];
     
-    // Determinar periodo dinámico para el encabezado (Opcional)
     let mesesDisponibles = [...new Set(datosVentasRaw.map(d => d.mes))].sort((a, b) => getMesNum(a) - getMesNum(b));
     if(mesesDisponibles.length > 0) {
         document.getElementById('badge-periodo').innerText = `PERÍODO: ${mesesDisponibles[0]} a ${mesesDisponibles[mesesDisponibles.length-1]}`;
@@ -226,7 +224,6 @@ function dibujarGraficos(vData, vTendenciaData) {
     graficoCat = new Chart(ctxCat, { type: 'bar', data: { labels: t10Cat.map(d => d.name), datasets: [ { label: 'Venta Actual', data: t10Cat.map(d => d.act), backgroundColor: '#012094' }, { label: 'Venta Pasada', data: t10Cat.map(d => d.pas), backgroundColor: '#E1251B' } ] }, options: configBarrasTop });
 }
 
-// LÓGICA UNIVERSAL DE TABLAS
 function procesarAgrupacion(vData, sData, keyName) {
     let map = {};
     vData.forEach(d => { 
@@ -297,6 +294,14 @@ function renderTabla(tablaKey) {
     s.data.slice(start, start + s.limit).forEach(item => {
         let tr = document.createElement('tr');
         tr.innerHTML = `<td>${item.nombre}</td><td>${formatNumber(item.vAct)}</td><td>${formatNumber(item.vPas)}</td><td class="${item.difV >= 0 ? 'pos' : 'neg'}">${item.difV > 0 ? '+' : ''}${formatNumber(item.difV)}</td><td>${formatNumber(item.sAct)}</td><td>${formatNumber(item.sPas)}</td><td class="${item.difS >= 0 ? 'pos' : 'neg'}">${item.difS > 0 ? '+' : ''}${formatNumber(item.difS)}</td>`;
+        
+        // Efecto de selección visual al hacer clic en cualquier fila de cualquier tabla
+        tr.onclick = function() {
+            let siblings = this.parentNode.children;
+            for(let sib of siblings) { if(sib !== this) sib.classList.remove('row-selected'); }
+            this.classList.toggle('row-selected');
+        };
+
         tbody.appendChild(tr);
     });
     document.getElementById(`info-${tablaKey}`).innerText = `Página ${s.page} de ${Math.ceil(s.data.length / s.limit) || 1} (${s.data.length} ${s.label})`;
