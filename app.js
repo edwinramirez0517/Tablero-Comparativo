@@ -2,10 +2,31 @@ Chart.register(ChartDataLabels);
 
 let datosVentas = [];
 let datosSaldos = [];
-const ordenMeses = { 'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4, 'Mayo': 5, 'Junio': 6, 'Julio': 7, 'Agosto': 8, 'Septiembre': 9, 'Octubre': 10, 'Noviembre': 11, 'Diciembre': 12 };
 
+// Diccionario cronológico para forzar el orden correcto de los meses (Punto 4)
+const ordenMesesMap = { 'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4, 'Mayo': 5, 'Junio': 6, 'Julio': 7, 'Agosto': 8, 'Septiembre': 9, 'Octubre': 10, 'Noviembre': 11, 'Diciembre': 12 };
+
+// Utilidad para formatear números con comas
 function formatNumber(num) {
+    if (num === null || num === undefined) return "0";
     return new Intl.NumberFormat('en-US').format(Math.round(num));
+}
+
+// Lógica de PESTAÑAS (Punto 5)
+function openTab(evt, tabName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].className = tabcontent[i].className.replace(" active", "");
+    }
+    tablinks = document.getElementsByClassName("tab-button");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    document.getElementById(tabName).className += " active";
+    evt.currentTarget.className += " active";
+    // Forzar redibujado de gráficos al cambiar de pestaña si estaban ocultos
+    if(tabName === 'tab-graficos') { actualizarTablero(); }
 }
 
 // 1. Cargar Ventas
@@ -49,8 +70,8 @@ function cargarSaldos() {
                 let procesado = [];
                 resultados.data.forEach(fila => {
                     if(fila.Name) {
-                        let saldo_actual_real = parseFloat(fila.Saldo_Total_Anterior) || 0; 
-                        let saldo_anterior_real = parseFloat(fila.Saldo_Total_Actual) || 0;
+                        let saldo_actual_real = parseFloat(fila.Saldo_Total_Anterior) || 0; // Lógica invertida en origen
+                        let saldo_anterior_real = parseFloat(fila.Saldo_Total_Actual) || 0; // Lógica invertida en origen
                         let tipo_tienda = (fila.Name.includes("AEC") || fila.Name.includes("DS")) ? "Mayoreo" : "Detalle";
                         procesado.push({ tienda: fila.Name, tipo: tipo_tienda, division: fila.Division, categoria: fila.Categoria, saldo_actual: saldo_actual_real, saldo_pasado: saldo_anterior_real });
                     }
@@ -67,15 +88,18 @@ Promise.all([cargarVentas(), cargarSaldos()]).then(archivos => {
     datosSaldos = archivos[1];
     document.getElementById('loading').style.display = 'none';
     document.getElementById('filtros-container').style.display = 'flex';
+    document.getElementById('tabs-container').style.display = 'flex';
     document.getElementById('graficos-container').style.display = 'block';
     inicializarFiltros();
     actualizarTablero();
 }).catch(console.error);
 
-// 4. Configurar Filtros
+// 4. Configurar Filtros Globales
 function inicializarFiltros() {
-    let mesesUnicos = [...new Set(datosVentas.map(d => d.mes))].sort((a, b) => ordenMeses[a] - ordenMeses[b]);
+    // Orden cronológico en el filtro de meses
+    let mesesUnicos = [...new Set(datosVentas.map(d => d.mes))].sort((a, b) => ordenMesesMap[a] - ordenMesesMap[b]);
     llenarSelect('f-mes', mesesUnicos);
+    
     llenarSelect('f-tipo', [...new Set(datosVentas.map(d => d.tipo))].sort());
     llenarSelect('f-tienda', [...new Set(datosVentas.map(d => d.tienda))].sort());
     llenarSelect('f-division', [...new Set(datosVentas.map(d => d.division))].sort());
@@ -98,6 +122,25 @@ function llenarSelect(id, opciones) {
 // 5. Lógica de Filtrado y Redibujado
 let graficoLinea, graficoDiv, graficoCat;
 
+// Configuraciones comunes para limpiar gráficos visualmente
+const layoutGráficosComún = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: { padding: { top: 20, right: 20, bottom: 0, left: 10 } }, // Evitar cortes de etiquetas (Punto 4)
+    scales: {
+        x: { grid: { display: false } }, // Quitar cuadrícula
+        y: { display: false, grid: { display: false } } // Quitar eje Y y cuadrícula
+    },
+    plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+        datalabels: {
+            display: true, color: '#444', anchor: 'end', align: 'top', offset: 2,
+            font: { weight: 'bold', size: 10 },
+            formatter: function(value) { return formatNumber(value); }
+        }
+    }
+};
+
 function actualizarTablero() {
     const fMes = document.getElementById('f-mes').value;
     const fTipo = document.getElementById('f-tipo').value;
@@ -105,6 +148,7 @@ function actualizarTablero() {
     const fDiv = document.getElementById('f-division').value;
     const fCat = document.getElementById('f-categoria').value;
 
+    // Filtro para Gráficos Comparativos y Tablas Gerenciales
     let vFiltradas = datosVentas.filter(d => {
         return (fMes === 'Todos' || d.mes === fMes) &&
                (fTipo === 'Todos' || d.tipo === fTipo) &&
@@ -113,6 +157,7 @@ function actualizarTablero() {
                (fCat === 'Todos' || d.categoria === fCat);
     });
 
+    // Filtro ESPECIAL para Tendencia Mensual (Ignora el filtro de mes para mostrar la línea de tiempo completa)
     let vTendencia = datosVentas.filter(d => {
         return (fTipo === 'Todos' || d.tipo === fTipo) &&
                (fTienda === 'Todos' || d.tienda === fTienda) &&
@@ -127,35 +172,21 @@ function actualizarTablero() {
                (fCat === 'Todos' || d.categoria === fCat);
     });
 
-    dibujarGraficos(vFiltradas, vTendencia, sFiltrados);
+    dibujarGraficosYTablas(vFiltradas, vTendencia, sFiltrados);
 }
 
-// Opciones comunes para limpiar gráficos (sin grilla, sin ejes Y)
-const cleanChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-        legend: { position: 'top' }
-    },
-    scales: {
-        x: { grid: { display: false } },
-        y: { display: false, grid: { display: false } } // Oculta eje Y y su grilla
-    }
-};
-
-const labelsConfigTop = {
-    color: '#333', anchor: 'end', align: 'top', font: { weight: 'bold', size: 11 },
-    formatter: function(value) { return formatNumber(value); }
-};
-
-// 6. DIBUJAR GRÁFICOS Y TABLAS
-function dibujarGraficos(vData, vTendenciaData, sData) {
+// 6. DIBUJAR COMPONENTES
+function dibujarGraficosYTablas(vData, vTendenciaData, sData) {
     
-    // --- 6.1 Tendencia Mensual (Líneas Limpias) ---
+    // --- 6.1 Tendencia Mensual CORREGIDA (Punto 4: Orden Cronológico y Etiquetas) ---
     const ctxLinea = document.getElementById('chartLine').getContext('2d');
-    let mesesOrdenados = [...new Set(datosVentas.map(item => item.mes))].sort((a, b) => ordenMeses[a] - ordenMeses[b]);
-    const totActual = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.actual, 0));
-    const totPasado = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.pasado, 0));
+    
+    // Sacamos meses únicos y los ordenamos cronológicamente
+    let mesesOrdenados = [...new Set(datosVentas.map(item => item.mes))].sort((a, b) => ordenMesesMap[a] - ordenMesesMap[b]);
+    
+    // Sumamos act y pas ignorando el filtro de mes seleccionado
+    const totActualM = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.actual, 0));
+    const totPasadoM = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.pasado, 0));
 
     if(graficoLinea) graficoLinea.destroy();
     graficoLinea = new Chart(ctxLinea, {
@@ -163,129 +194,160 @@ function dibujarGraficos(vData, vTendenciaData, sData) {
         data: {
             labels: mesesOrdenados,
             datasets: [
-                { label: 'Año Actual', data: totActual, borderColor: '#012094', backgroundColor: '#012094', tension: 0.3, borderWidth: 3, pointRadius: 4 },
-                { label: 'Año Pasado', data: totPasado, borderColor: '#E1251B', backgroundColor: '#E1251B', tension: 0.3, borderWidth: 3, pointRadius: 4 }
+                { label: 'Año Actual', data: totActualM, borderColor: '#012094', backgroundColor: '#012094', tension: 0.3, borderWidth: 3, pointRadius: 4 },
+                { label: 'Año Pasado', data: totPasadoM, borderColor: '#E1251B', backgroundColor: '#E1251B', tension: 0.3, borderWidth: 3, pointRadius: 4 }
             ]
         }, 
         options: {
-            ...cleanChartOptions,
+            ...layoutGráficosComún,
             plugins: {
-                datalabels: {
-                    color: function(context) { return context.dataset.borderColor; }, // Etiqueta del color de la línea
-                    anchor: 'bottom', align: 'bottom', font: { weight: 'bold', size: 11 },
-                    formatter: function(value) { return formatNumber(value); }
+                ...layoutGráficosComún.plugins,
+                datalabels: { // Etiquetas flotando sobre los puntos
+                    ...layoutGráficosComún.plugins.datalabels,
+                    color: function(context) { return context.dataset.borderColor; },
+                    anchor: 'center', align: 'top', offset: 8
                 }
             }
         }
     });
     
-    // --- 6.2 Comparativo por División (Barras Limpias) ---
+    // --- 6.2 Top Divisiones CORREGIDO (Punto 3: Comparativo AA vs AP, Ordenado Desc) ---
     const ctxDiv = document.getElementById('chartDiv').getContext('2d');
-    const divisiones = [...new Set(vData.map(item => item.division))];
-    const divActual = divisiones.map(d => vData.filter(x => x.division === d).reduce((s, x) => s + x.actual, 0));
     
+    // Agrupamos act y pas por división
+    let resumenDiv = {};
+    vData.forEach(d => {
+        if (!resumenDiv[d.division]) resumenDiv[d.division] = { act: 0, pas: 0 };
+        resumenDiv[d.division].act += d.actual;
+        resumenDiv[d.division].pas += d.pasado;
+    });
+
+    // Convertimos a array, filtramos ceros y ordenamos de mayor a menor por Venta Actual
+    let arrDiv = Object.entries(resumenDiv)
+        .map(([name, data]) => ({ name, ...data }))
+        .filter(d => d.act > 0 || d.pas > 0)
+        .sort((a, b) => b.act - a.act); // ORDENADO DE MAYOR A MENOR
+
     if(graficoDiv) graficoDiv.destroy();
     graficoDiv = new Chart(ctxDiv, {
         type: 'bar',
-        data: { labels: divisiones, datasets: [{ label: 'Venta Actual', data: divActual, backgroundColor: '#012094' }] },
-        options: { ...cleanChartOptions, plugins: { datalabels: labelsConfigTop } }
+        data: {
+            labels: arrDiv.map(d => d.name),
+            datasets: [
+                { label: 'Venta Actual', data: arrDiv.map(d => d.act), backgroundColor: '#012094' },
+                { label: 'Venta Pasada', data: arrDiv.map(d => d.pas), backgroundColor: '#E1251B' } // COMPARATIVO
+            ]
+        },
+        options: layoutGráficosComún
     });
 
-    // --- 6.3 Comparativo por Categoría (Barras Limpias) ---
+    // --- 6.3 Top Categorías CORREGIDO (Punto 3: Comparativo, Ordenado Desc, Nombres visibles) ---
     const ctxCat = document.getElementById('chartCat').getContext('2d');
-    let catSuma = [];
-    [...new Set(vData.map(item => item.categoria))].forEach(c => {
-        catSuma.push({ cat: c, total: vData.filter(x => x.categoria === c).reduce((s, x) => s + x.actual, 0) });
+    
+    // Agrupamos por categoría
+    let resumenCat = {};
+    vData.forEach(d => {
+        if (!resumenCat[d.categoria]) resumenCat[d.categoria] = { act: 0, pas: 0 };
+        resumenCat[d.categoria].act += d.actual;
+        resumenCat[d.categoria].pas += d.pasado;
     });
-    catSuma.sort((a, b) => b.total - a.total);
-    const top10Cat = catSuma.slice(0, 10);
 
-    const nombresCategorias = top10Cat.map(x => String(x.cat)); 
-    const totalesCategorias = top10Cat.map(x => x.total);
+    // Ordenamos y sacamos Top 10
+    let arrCat = Object.entries(resumenCat)
+        .map(([name, data]) => ({ name, ...data }))
+        .filter(d => d.act > 0 || d.pas > 0)
+        .sort((a, b) => b.act - a.act); // ORDENADO DE MAYOR A MENOR
+    
+    const top10Cat = arrCat.slice(0, 10);
 
     if(graficoCat) graficoCat.destroy();
     graficoCat = new Chart(ctxCat, {
         type: 'bar',
-        data: { labels: nombresCategorias, datasets: [{ label: 'Venta Actual', data: totalesCategorias, backgroundColor: '#E1251B' }] },
-        options: { ...cleanChartOptions, plugins: { datalabels: labelsConfigTop } }
+        data: {
+            labels: top10Cat.map(d => d.name),
+            datasets: [
+                { label: 'Venta Actual', data: top10Cat.map(d => d.act), backgroundColor: '#012094' },
+                { label: 'Venta Pasada', data: top10Cat.map(d => d.pas), backgroundColor: '#E1251B' } // COMPARATIVO
+            ]
+        },
+        options: layoutGráficosComún
     });
 
-    // --- 6.4 TABLA 1: Resumen Gerencial por Tienda ---
-    const tbodyGerencial = document.querySelector('#tablaGerencial tbody');
-    tbodyGerencial.innerHTML = '';
-    let todasLasTiendas = [...new Set([...vData.map(d => d.tienda), ...sData.map(d => d.tienda)])].sort();
+    // --- 6.4 TABLA PESTAÑA 2: Resumen Gerencial Tiendas CORREGIDA (Punto 1 y 2: Unificada y Visible) ---
+    const tbodyTiendas = document.querySelector('#tablaGerencialTiendas tbody');
+    tbodyTiendas.innerHTML = '';
+    
+    // Cruzamos bases: Lista única de tiendas presentes en Ventas o Saldos filtrados
+    let tiendasCruzadas = [...new Set([...vData.map(d => d.tienda), ...sData.map(d => d.tienda)])].sort();
 
-    todasLasTiendas.forEach(t => {
-        let vAct = vData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.actual, 0);
-        let vPas = vData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.pasado, 0);
-        let difV = vAct - vPas;
+    tiendasCruzadas.forEach(t => {
+        // Datos Ventas
+        let vActT = vData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.actual, 0);
+        let vPasT = vData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.pasado, 0);
+        let difVT = vActT - vPasT;
 
-        let sAct = sData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.saldo_actual, 0);
-        let sPas = sData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.saldo_pasado, 0);
-        let difS = sAct - sPas;
+        // Datos Saldos
+        let sActT = sData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.saldo_actual, 0);
+        let sPasT = sData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.saldo_pasado, 0);
+        let difST = sActT - sPasT;
 
-        if (vAct !== 0 || vPas !== 0 || sAct !== 0 || sPas !== 0) {
+        if (vActT !== 0 || vPasT !== 0 || sActT !== 0 || sPasT !== 0) {
             let tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${t}</td>
-                <td>${formatNumber(vAct)}</td>
-                <td>${formatNumber(vPas)}</td>
-                <td class="${difV >= 0 ? 'pos' : 'neg'}" style="border-right: 2px solid #eee;">${difV > 0 ? '+' : ''}${formatNumber(difV)}</td>
-                <td>${formatNumber(sAct)}</td>
-                <td>${formatNumber(sPas)}</td>
-                <td class="${difS >= 0 ? 'pos' : 'neg'}">${difS > 0 ? '+' : ''}${formatNumber(difS)}</td>
+                <td>${formatNumber(vActT)}</td>
+                <td>${formatNumber(vPasT)}</td>
+                <td class="${difVT >= 0 ? 'pos' : 'neg'}" style="border-right: 2px solid #eee;">${difVT > 0 ? '+' : ''}${formatNumber(difVT)}</td>
+                <td>${formatNumber(sActT)}</td>
+                <td>${formatNumber(sPasT)}</td>
+                <td class="${difST >= 0 ? 'pos' : 'neg'}">${difST > 0 ? '+' : ''}${formatNumber(difST)}</td>
             `;
-            tbodyGerencial.appendChild(tr);
+            tbodyTiendas.appendChild(tr);
         }
     });
 
-    // --- NUEVA 6.5 TABLA 3: Resumen de INVENTARIOS por Grupo (División y Categoría) ---
-    const tbodySaldosGrupo = document.querySelector('#tablaSaldosGrupo tbody');
-    tbodySaldosGrupo.innerHTML = '';
+    // --- 6.5 TABLA PESTAÑA 3: Detalle Unificado por GRUPO (Punto 1 y 6: Div/Cat unificados) ---
+    const tbodyGrupos = document.querySelector('#tablaDetalleGrupos tbody');
+    tbodyGrupos.innerHTML = '';
     
-    let agrupadoSaldos = {};
-    sData.forEach(d => {
-        let clave = d.division + "|" + d.categoria;
-        if (!agrupadoSaldos[clave]) agrupadoSaldos[clave] = { div: d.division, cat: d.categoria, act: 0, pas: 0 };
-        agrupadoSaldos[clave].act += d.saldo_actual;
-        agrupadoSaldos[clave].pas += d.saldo_pasado;
-    });
+    // Objeto maestro para cruzar grupos (División + Categoría)
+    let resumenGruposMaster = {};
 
-    Object.values(agrupadoSaldos).sort((a, b) => a.div.localeCompare(b.div) || a.cat.localeCompare(b.cat)).forEach(item => {
-        let difSaldos = item.act - item.pas;
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${item.div}</td>
-            <td>${item.cat}</td>
-            <td>${formatNumber(item.act)}</td>
-            <td>${formatNumber(item.pas)}</td>
-            <td class="${difSaldos >= 0 ? 'pos' : 'neg'}">${difSaldos > 0 ? '+' : ''}${formatNumber(difSaldos)}</td>
-        `;
-        tbodySaldosGrupo.appendChild(tr);
-    });
-
-    // --- 6.6 TABLA 2: Detalle Operativo de VENTAS ---
-    const tbodyDetalle = document.querySelector('#tablaDetalle tbody');
-    tbodyDetalle.innerHTML = '';
-
-    let agrupadoVentas = {};
+    // Inyectar datos de Ventas al maestro
     vData.forEach(d => {
-        let clave = d.division + "|" + d.categoria;
-        if (!agrupadoVentas[clave]) agrupadoVentas[clave] = { div: d.division, cat: d.categoria, act: 0, pas: 0 };
-        agrupadoVentas[clave].act += d.actual;
-        agrupadoVentas[clave].pas += d.pasado;
+        let clave = d.division + " / " + d.categoria;
+        if (!resumenGruposMaster[clave]) resumenGruposMaster[clave] = { divCat: clave, vAct: 0, vPas: 0, sAct: 0, sPas: 0 };
+        resumenGruposMaster[clave].vAct += d.actual;
+        resumenGruposMaster[clave].vPas += d.pasado;
     });
 
-    Object.values(agrupadoVentas).sort((a, b) => a.div.localeCompare(b.div) || a.cat.localeCompare(b.cat)).forEach(item => {
-        let difCat = item.act - item.pas;
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${item.div}</td>
-            <td>${item.cat}</td>
-            <td>${formatNumber(item.act)}</td>
-            <td>${formatNumber(item.pas)}</td>
-            <td class="${difCat >= 0 ? 'pos' : 'neg'}">${difCat > 0 ? '+' : ''}${formatNumber(difCat)}</td>
-        `;
-        tbodyDetalle.appendChild(tr);
+    // Inyectar datos de Saldos al maestro
+    sData.forEach(d => {
+        let clave = d.division + " / " + d.categoria;
+        if (!resumenGruposMaster[clave]) resumenGruposMaster[clave] = { divCat: clave, vAct: 0, vPas: 0, sAct: 0, sPas: 0 };
+        resumenGruposMaster[clave].sAct += d.saldo_actual;
+        resumenGruposMaster[clave].sPas += d.saldo_pasado;
+    });
+
+    // Convertir a array y ordenar alfabéticamente por grupo
+    let arrGrupos = Object.values(resumenGruposMaster).sort((a, b) => a.divCat.localeCompare(b.divCat));
+
+    arrGrupos.forEach(g => {
+        let difVG = g.vAct - g.vPas;
+        let difSG = g.sAct - g.sPas;
+
+        if (g.vAct !== 0 || g.vPas !== 0 || g.sAct !== 0 || g.sPas !== 0) {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${g.divCat}</td>
+                <td>${formatNumber(g.vAct)}</td>
+                <td>${formatNumber(g.vPas)}</td>
+                <td class="${difVG >= 0 ? 'pos' : 'neg'}" style="border-right: 2px solid #eee;">${difVG > 0 ? '+' : ''}${formatNumber(difVG)}</td>
+                <td>${formatNumber(g.sAct)}</td>
+                <td>${formatNumber(g.sPas)}</td>
+                <td class="${difSG >= 0 ? 'pos' : 'neg'}">${difSG > 0 ? '+' : ''}${formatNumber(difSG)}</td>
+            `;
+            tbodyGrupos.appendChild(tr);
+        }
     });
 }
