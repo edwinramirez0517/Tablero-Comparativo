@@ -9,23 +9,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --primary: #012094; 
-            --secondary: #E1251B; 
-            --bg: #ffffff; 
-            --text: #333333; 
-        }
+        :root { --primary: #012094; --secondary: #E1251B; --bg: #ffffff; --text: #333333; }
         body { font-family: 'Montserrat', sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text); position: relative; min-height: 100vh; }
         
-        /* --- AVISO DE GIRO DE PANTALLA (Solo Celulares Verticales) --- */
         .landscape-prompt { display: none; }
         @media screen and (max-width: 768px) and (orientation: portrait) {
-            .landscape-prompt {
-                display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                background: rgba(1, 32, 148, 0.98); color: white; z-index: 99999;
-                align-items: center; justify-content: center; text-align: center; padding: 30px;
-                flex-direction: column; backdrop-filter: blur(10px);
-            }
+            .landscape-prompt { display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(1, 32, 148, 0.98); color: white; z-index: 99999; align-items: center; justify-content: center; text-align: center; padding: 30px; flex-direction: column; backdrop-filter: blur(10px); }
             .landscape-prompt svg { width: 60px; height: 60px; fill: white; margin-bottom: 20px; animation: rotatePhone 2s infinite ease-in-out; }
             .landscape-prompt h2 { margin: 0 0 10px 0; font-weight: 800; font-size: 22px; }
             .landscape-prompt p { font-weight: 600; font-size: 14px; margin-bottom: 25px; opacity: 0.9; }
@@ -33,16 +22,19 @@
         }
         @keyframes rotatePhone { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(-90deg); } }
 
-        /* --- MARCA DE AGUA --- */
         .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.12; z-index: -1; pointer-events: none; width: 70%; text-align: center; }
         .watermark img { max-width: 100%; max-height: 80vh; object-fit: contain; }
 
-        header { background-color: var(--primary); color: white; padding: 15px 30px; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .logo-container { padding: 5px 20px 5px 0; display: flex; align-items: center; justify-content: center; height: 90px; margin-right: 25px; }
+        /* HEADER CON INSIGNIA DE PERÍODO */
+        header { background-color: var(--primary); color: white; padding: 15px 30px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-wrap: wrap; gap: 15px;}
+        .header-left { display: flex; align-items: center; }
+        .logo-container { padding: 5px 20px 5px 0; display: flex; align-items: center; justify-content: center; height: 90px; margin-right: 20px; }
         .logo-container img { max-height: 80px; width: auto; object-fit: contain; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2)); }
         .header-titles { display: flex; flex-direction: column; }
-        .header-titles .subtitle { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+        .header-titles .subtitle { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 5px;}
         
+        .period-badge { background-color: var(--secondary); color: white; padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: 800; letter-spacing: 1px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: 2px solid white; text-align: center;}
+
         .container { padding: 20px 30px; }
         
         .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
@@ -61,7 +53,7 @@
         .btn-clear:hover { background-color: #c01b12; }
         
         .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #eee; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; }
-        .tab-button { padding: 12px 20px; background: none; border: none; border-bottom: 4px solid transparent; cursor: pointer; font-size: 15px; font-weight: 700; color: #888; transition: 0.3s; font-family: 'Montserrat', sans-serif; }
+        .tab-button { padding: 12px 15px; background: none; border: none; border-bottom: 4px solid transparent; cursor: pointer; font-size: 14px; font-weight: 700; color: #888; transition: 0.3s; font-family: 'Montserrat', sans-serif; }
         .tab-button:hover { color: var(--primary); background-color: rgba(248,249,250,0.8); border-radius: 8px 8px 0 0; }
         .tab-button.active { color: var(--primary); border-bottom-color: var(--secondary); }
         .tab-content { display: none; animation: fadeIn 0.4s; }
@@ -75,41 +67,23 @@
         .chart-title::before { content: ""; display: block; width: 12px; height: 12px; background-color: var(--secondary); border-radius: 50%; }
         .chart-wrapper { position: relative; height: 400px; width: 100%; }
         
-        /* --- CORRECCIÓN ENCABEZADOS FIJOS --- */
         .table-controls { display: flex; justify-content: space-between; align-items: center; background: var(--primary); padding: 12px 15px; color: white; flex-wrap: wrap; gap: 10px; border-radius: 6px 6px 0 0; }
-        #tab-grupos .table-controls { background-color: var(--secondary); }
+        .bg-secondary { background-color: var(--secondary) !important; }
+        .text-secondary { color: var(--secondary) !important; }
         .table-controls select { padding: 5px; border-radius: 4px; border: none; font-weight: 600; font-size: 12px; color: #333;}
         .pagination-info { font-size: 13px; font-weight: 600; }
         .btn-page { background: white; color: var(--primary); border: none; padding: 6px 12px; border-radius: 4px; font-weight: 700; margin-left: 5px; font-size: 12px; cursor: pointer;}
-        #tab-grupos .btn-page { color: var(--secondary); }
         .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Contenedor principal con Scroll Interno para que funcionen los sticky headers */
-        .table-responsive-wrapper { 
-            overflow: auto; /* IMPORTANTE: Activa el scroll interno */
-            max-height: 550px; /* IMPORTANTE: Límite de altura para que el sticky atrape los encabezados */
-            background: rgba(255,255,255,0.95); 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
-            border: 1px solid #eee; 
-            border-top: none; 
-            border-radius: 0 0 6px 6px; 
-            margin-bottom: 50px;
-        }
+        .table-responsive-wrapper { overflow: auto; max-height: 550px; background: rgba(255,255,255,0.95); box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eee; border-top: none; border-radius: 0 0 6px 6px; margin-bottom: 50px;}
         table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; min-width: 900px; }
         
-        /* Headers ordenables FIJOS ARRIBA */
-        thead th { 
-            position: sticky; top: 0; z-index: 20; /* Magia para fijarlos */
-            background-color: #01186e; color: white; padding: 12px 10px; text-align: center; font-weight: 800; border-bottom: 1px solid #012094; border-right: 1px solid #012094; text-transform: uppercase; font-size: 11px; cursor: pointer; user-select: none; transition: background 0.2s;
-        }
-        /* Ajuste para segunda fila de encabezados si las hay */
+        thead th { position: sticky; top: 0; z-index: 20; background-color: #01186e; color: white; padding: 12px 10px; text-align: center; font-weight: 800; border-bottom: 1px solid #012094; border-right: 1px solid #012094; text-transform: uppercase; font-size: 11px; cursor: pointer; user-select: none; transition: background 0.2s;}
         thead tr:nth-child(2) th { top: 38px; z-index: 19; }
-
         thead th:hover { background-color: #0225a3; }
         .sort-icon { font-size: 10px; margin-left: 5px; opacity: 0.5; }
         .sort-icon.active { opacity: 1; color: #ffeb3b; }
         
-        /* Fijar primera columna */
         tbody th, tbody td:first-child, thead th:first-child { position: sticky; left: 0; z-index: 5; text-align: left; border-right: 2px solid #ccc; }
         thead tr:first-child th:first-child { z-index: 25; background-color: #01186e; color: white; border-bottom: none;} 
         
@@ -122,7 +96,6 @@
 </head>
 <body>
 
-    <!-- AVISO DE PANTALLA HORIZONTAL (Solo se activa en celular vertical) -->
     <div class="landscape-prompt" id="landscape-prompt">
         <svg viewBox="0 0 24 24"><path d="M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm1 18H7V5h10v14zM8 2h8v2H8z"/></svg>
         <h2>Mejor en Horizontal</h2>
@@ -133,11 +106,15 @@
     <div class="watermark"><img src="marca_agua.png" onerror="this.style.display='none'" alt="Marca de Agua"></div>
 
     <header>
-        <div class="header-brand">
+        <div class="header-left">
             <div class="logo-container"><img src="logo.png" onerror="this.style.display='none'" alt="Logo Compadre"></div>
             <div class="header-titles">
                 <div class="subtitle">Tablero Comparativo Gerencial Interactivo</div>
             </div>
+        </div>
+        <!-- INSIGNIA DE PERÍODO -->
+        <div class="period-badge" id="badge-periodo">
+            PERÍODO: Acumulado vs Año Anterior
         </div>
     </header>
 
@@ -165,6 +142,8 @@
 
         <div class="tabs" id="tabs-container" style="display:none;">
             <button class="tab-button active" onclick="openTab(event, 'tab-graficos')">Resumen Visual</button>
+            <button class="tab-button" onclick="openTab(event, 'tab-divisiones')">Resumen por División</button>
+            <button class="tab-button" onclick="openTab(event, 'tab-categorias')">Resumen por Categoría</button>
             <button class="tab-button" onclick="openTab(event, 'tab-tiendas')">Detalle por Tienda</button>
             <button class="tab-button" onclick="openTab(event, 'tab-grupos')">Detalle por Grupo</button>
         </div>
@@ -188,16 +167,73 @@
                 </div>
             </div>
 
-            <div id="tab-tiendas" class="tab-content">
+            <!-- TABLA 1: DIVISIONES -->
+            <div id="tab-divisiones" class="tab-content">
+                <div class="table-controls bg-secondary">
+                    <div>Mostrar <select id="limit-divisiones" onchange="cambiarLimite('divisiones')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
+                    <div><span class="pagination-info" id="info-divisiones">Mostrando 0 de 0</span><button class="btn-page text-secondary" onclick="cambiarPagina('divisiones', -1)">&#9664; Ant</button><button class="btn-page text-secondary" onclick="cambiarPagina('divisiones', 1)">Sig &#9654;</button></div>
+                </div>
+                <div class="table-responsive-wrapper">
+                    <table id="tablaResumenDivisiones">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="vertical-align: bottom;" onclick="ordenarTabla('divisiones', 'nombre')">División <span id="sort-divisiones-nombre" class="sort-icon"></span></th>
+                                <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
+                                <th colspan="3">INVENTARIO (Saldos)</th>
+                            </tr>
+                            <tr>
+                                <th onclick="ordenarTabla('divisiones', 'vAct')">Venta Actual <span id="sort-divisiones-vAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('divisiones', 'vPas')">Venta Pasada <span id="sort-divisiones-vPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('divisiones', 'difV')" style="border-right: 2px solid #fff;">Dif. Venta <span id="sort-divisiones-difV" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('divisiones', 'sAct')">Saldo Actual <span id="sort-divisiones-sAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('divisiones', 'sPas')">Saldo Pasado <span id="sort-divisiones-sPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('divisiones', 'difS')">Dif. Saldo <span id="sort-divisiones-difS" class="sort-icon"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABLA 2: CATEGORÍAS -->
+            <div id="tab-categorias" class="tab-content">
                 <div class="table-controls">
+                    <div>Mostrar <select id="limit-categorias" onchange="cambiarLimite('categorias')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
+                    <div><span class="pagination-info" id="info-categorias">Mostrando 0 de 0</span><button class="btn-page" onclick="cambiarPagina('categorias', -1)">&#9664; Ant</button><button class="btn-page" onclick="cambiarPagina('categorias', 1)">Sig &#9654;</button></div>
+                </div>
+                <div class="table-responsive-wrapper">
+                    <table id="tablaResumenCategorias">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="vertical-align: bottom;" onclick="ordenarTabla('categorias', 'nombre')">Categoría <span id="sort-categorias-nombre" class="sort-icon"></span></th>
+                                <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
+                                <th colspan="3">INVENTARIO (Saldos)</th>
+                            </tr>
+                            <tr>
+                                <th onclick="ordenarTabla('categorias', 'vAct')">Venta Actual <span id="sort-categorias-vAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('categorias', 'vPas')">Venta Pasada <span id="sort-categorias-vPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('categorias', 'difV')" style="border-right: 2px solid #fff;">Dif. Venta <span id="sort-categorias-difV" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('categorias', 'sAct')">Saldo Actual <span id="sort-categorias-sAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('categorias', 'sPas')">Saldo Pasado <span id="sort-categorias-sPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('categorias', 'difS')">Dif. Saldo <span id="sort-categorias-difS" class="sort-icon"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABLA 3: TIENDAS -->
+            <div id="tab-tiendas" class="tab-content">
+                <div class="table-controls bg-secondary">
                     <div>Mostrar <select id="limit-tiendas" onchange="cambiarLimite('tiendas')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
-                    <div><span class="pagination-info" id="info-tiendas">Mostrando 0 de 0</span><button class="btn-page" onclick="cambiarPagina('tiendas', -1)">&#9664; Ant</button><button class="btn-page" onclick="cambiarPagina('tiendas', 1)">Sig &#9654;</button></div>
+                    <div><span class="pagination-info" id="info-tiendas">Mostrando 0 de 0</span><button class="btn-page text-secondary" onclick="cambiarPagina('tiendas', -1)">&#9664; Ant</button><button class="btn-page text-secondary" onclick="cambiarPagina('tiendas', 1)">Sig &#9654;</button></div>
                 </div>
                 <div class="table-responsive-wrapper">
                     <table id="tablaGerencialTiendas">
                         <thead>
                             <tr>
-                                <th rowspan="2" style="vertical-align: bottom;" onclick="ordenarTabla('tiendas', 'tienda')">Tienda <span id="sort-tiendas-tienda" class="sort-icon"></span></th>
+                                <th rowspan="2" style="vertical-align: bottom;" onclick="ordenarTabla('tiendas', 'nombre')">Tienda <span id="sort-tiendas-nombre" class="sort-icon"></span></th>
                                 <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
                                 <th colspan="3">INVENTARIO (Saldos)</th>
                             </tr>
@@ -215,10 +251,11 @@
                 </div>
             </div>
 
+            <!-- TABLA 4: GRUPOS -->
             <div id="tab-grupos" class="tab-content">
-                <div class="table-controls" style="background-color: var(--secondary);">
+                <div class="table-controls">
                     <div>Mostrar <select id="limit-grupos" onchange="cambiarLimite('grupos')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
-                    <div><span class="pagination-info" id="info-grupos">Mostrando 0 de 0</span><button class="btn-page" style="color:var(--secondary);" onclick="cambiarPagina('grupos', -1)">&#9664; Ant</button><button class="btn-page" style="color:var(--secondary);" onclick="cambiarPagina('grupos', 1)">Sig &#9654;</button></div>
+                    <div><span class="pagination-info" id="info-grupos">Mostrando 0 de 0</span><button class="btn-page" onclick="cambiarPagina('grupos', -1)">&#9664; Ant</button><button class="btn-page" onclick="cambiarPagina('grupos', 1)">Sig &#9654;</button></div>
                 </div>
                 <div class="table-responsive-wrapper">
                     <table id="tablaDetalleGrupos">
