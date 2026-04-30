@@ -113,37 +113,54 @@ function inicializarFiltrosDOM() {
 
 function getMesNum(m) { return mesesVal[m.toLowerCase()] || 99; }
 
-function actualizarFiltrosDisponibles(vFiltradas) {
+function actualizarFiltrosDisponibles() {
     let mesesAct = [...new Set(datosVentasRaw.map(d => d.mes))].sort((a, b) => getMesNum(a) - getMesNum(b));
     let tiendasAct = [...new Set(datosVentasRaw.map(d => d.tienda))].sort();
-    let divAct = fTienda === 'Todos' ? [...new Set(datosVentasRaw.map(d => d.division))] : [...new Set(vFiltradas.map(d => d.division))];
-    let catAct = (fTienda === 'Todos' && fDiv === 'Todos') ? [...new Set(datosVentasRaw.map(d => d.categoria))] : [...new Set(vFiltradas.map(d => d.categoria))];
+
+    let vSoloTienda = datosVentasRaw.filter(d => fTienda === 'Todos' || d.tienda === fTienda);
+    let divAct = [...new Set(vSoloTienda.map(d => d.division))];
 
     llenarSelectManteniendoValor('f-mes', mesesAct, fMes);
     llenarSelectManteniendoValor('f-tienda', tiendasAct, fTienda);
     llenarSelectManteniendoValor('f-division', divAct.sort(), fDiv);
+
+    let vTiendaYDiv = vSoloTienda.filter(d => fDiv === 'Todos' || d.division === fDiv);
+    let catAct = [...new Set(vTiendaYDiv.map(d => d.categoria))];
+
     llenarSelectManteniendoValor('f-categoria', catAct.sort(), fCat);
 }
 
 function llenarSelectManteniendoValor(id, opciones, valorActual) {
     const select = document.getElementById(id);
     select.innerHTML = '<option value="Todos">-- Todos --</option>';
+    let selectedExists = false;
     opciones.forEach(op => {
         let el = document.createElement('option');
         el.value = el.text = op;
-        if(op === valorActual) el.selected = true;
+        if(op === valorActual) {
+            el.selected = true;
+            selectedExists = true;
+        }
         select.appendChild(el);
     });
+
+    if (!selectedExists && valorActual !== 'Todos') {
+        select.value = 'Todos';
+        if (id === 'f-mes') fMes = 'Todos';
+        if (id === 'f-tienda') fTienda = 'Todos';
+        if (id === 'f-division') fDiv = 'Todos';
+        if (id === 'f-categoria') fCat = 'Todos';
+    }
 }
 
 let graficoLinea, graficoDiv, graficoCat;
 
 function actualizarTablero(cascada = false) {
+    if(cascada) actualizarFiltrosDisponibles();
+
     let vFiltradas = datosVentasRaw.filter(d => (fMes === 'Todos' || d.mes === fMes) && (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
     let vTend = datosVentasRaw.filter(d => (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
     let sFiltrados = datosSaldosRaw.filter(d => (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
-
-    if(cascada) actualizarFiltrosDisponibles(datosVentasRaw.filter(d => (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv)));
 
     actualizarKPIs(vFiltradas, sFiltrados);
     dibujarGraficos(vFiltradas, vTend);
