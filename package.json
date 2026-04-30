@@ -1,0 +1,9 @@
+{
+  "name": "tablero-gerencial",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "node --test"
+  }
+}
