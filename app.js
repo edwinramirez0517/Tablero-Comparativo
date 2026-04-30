@@ -6,8 +6,13 @@ let fMes = 'Todos', fTienda = 'Todos', fDiv = 'Todos', fCat = 'Todos';
 
 const mesesVal = { 'enero':1, 'febrero':2, 'marzo':3, 'abril':4, 'mayo':5, 'junio':6, 'julio':7, 'agosto':8, 'septiembre':9, 'octubre':10, 'noviembre':11, 'diciembre':12 };
 
-let stateTiendas = { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false };
-let stateGrupos = { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false };
+// Manejador centralizado de estados de tablas
+const state = {
+    divisiones: { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenDivisiones', label: 'divisiones' },
+    categorias: { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenCategorias', label: 'categorías' },
+    tiendas:    { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaGerencialTiendas', label: 'tiendas' },
+    grupos:     { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaDetalleGrupos', label: 'grupos' }
+};
 
 function formatNumber(num) {
     if (num === null || num === undefined) return "0";
@@ -33,14 +38,12 @@ function limpiarFiltros() {
     actualizarTablero(true);
 }
 
-// 1. CARGA DE VENTAS (Con filtro anti-comas)
 function cargarVentas() {
     return new Promise((resolver, rechazar) => {
         Papa.parse('ventas.csv', {
             download: true, header: false, delimiter: ';',
             complete: function(resultados) {
                 const filas = resultados.data;
-                const mesesRow = filas[0];
                 const metricasRow = filas[1];
                 let procesado = [];
                 for(let i = 2; i < filas.length; i++) {
@@ -51,15 +54,10 @@ function cargarVentas() {
 
                     for(let c = 7; c < fila.length; c++) {
                         if (metricasRow[c] === 'Venta_Und_Anterior') {
-                            let mes = mesesRow[c] ? mesesRow[c].trim() : "";
-                            
-                            // LIMPIEZA DE COMAS EN VENTAS
-                            let pVal = fila[c];
-                            let pasadoStr = (pVal !== null && pVal !== undefined) ? pVal.toString().replace(/,/g, '') : "0";
+                            let mes = filas[0][c] ? filas[0][c].trim() : "";
+                            let pasadoStr = fila[c] ? fila[c].toString().replace(/,/g, '') : "0";
                             let pasado = parseFloat(pasadoStr) || 0;
-                            
-                            let aVal = fila[c+1];
-                            let actualStr = (aVal !== null && aVal !== undefined) ? aVal.toString().replace(/,/g, '') : "0";
+                            let actualStr = fila[c+1] ? fila[c+1].toString().replace(/,/g, '') : "0";
                             let actual = parseFloat(actualStr) || 0; 
                             
                             if ((pasado !== 0 || actual !== 0) && mes !== "") {
@@ -75,7 +73,6 @@ function cargarVentas() {
     });
 }
 
-// 2. CARGA DE SALDOS (Con filtro anti-comas)
 function cargarSaldos() {
     return new Promise((resolver, rechazar) => {
         Papa.parse('saldos.csv', {
@@ -84,15 +81,10 @@ function cargarSaldos() {
                 let procesado = [];
                 resultados.data.forEach(fila => {
                     if(fila.Name) {
-                        // LIMPIEZA DE COMAS EN SALDOS
-                        let aVal = fila.Saldo_Total_Actual;
-                        let sActStr = (aVal !== null && aVal !== undefined) ? aVal.toString().replace(/,/g, '') : "0";
+                        let sActStr = fila.Saldo_Total_Actual ? fila.Saldo_Total_Actual.toString().replace(/,/g, '') : "0";
                         let sAct = parseFloat(sActStr) || 0; 
-                        
-                        let pVal = fila.Saldo_Total_Anterior;
-                        let sPasStr = (pVal !== null && pVal !== undefined) ? pVal.toString().replace(/,/g, '') : "0";
+                        let sPasStr = fila.Saldo_Total_Anterior ? fila.Saldo_Total_Anterior.toString().replace(/,/g, '') : "0";
                         let sPas = parseFloat(sPasStr) || 0; 
-                        
                         const grupoReal = fila.Grupo || fila.Group || (fila.Division + " - " + fila.Categoria); 
                         procesado.push({ tienda: fila.Name, division: fila.Division, categoria: fila.Categoria, grupo: grupoReal, sAct: sAct, sPas: sPas });
                     }
@@ -106,6 +98,13 @@ function cargarSaldos() {
 Promise.all([cargarVentas(), cargarSaldos()]).then(archivos => {
     datosVentasRaw = archivos[0];
     datosSaldosRaw = archivos[1];
+    
+    // Determinar periodo dinámico para el encabezado (Opcional)
+    let mesesDisponibles = [...new Set(datosVentasRaw.map(d => d.mes))].sort((a, b) => getMesNum(a) - getMesNum(b));
+    if(mesesDisponibles.length > 0) {
+        document.getElementById('badge-periodo').innerText = `PERÍODO: ${mesesDisponibles[0]} a ${mesesDisponibles[mesesDisponibles.length-1]}`;
+    }
+
     document.getElementById('loading').style.display = 'none';
     document.getElementById('kpi-container').style.display = 'grid';
     document.getElementById('filtros-wrapper').style.display = 'flex';
@@ -171,7 +170,6 @@ function actualizarKPIs(vData, sData) {
     let vAct = vData.reduce((s, d) => s + d.actual, 0);
     let vPas = vData.reduce((s, d) => s + d.pasado, 0);
     let vDif = vAct - vPas;
-
     let sAct = sData.reduce((s, d) => s + d.sAct, 0);
     let sPas = sData.reduce((s, d) => s + d.sPas, 0);
     let sDif = sAct - sPas;
@@ -192,62 +190,31 @@ function actualizarKPIs(vData, sData) {
 const configBaseGrafico = {
     responsive: true, maintainAspectRatio: false,
     layout: { padding: { top: 40, right: 20, bottom: 0, left: 20 } },
-    scales: {
-        x: { grid: { display: false }, ticks: { font: { family: 'Montserrat', weight: 'bold', size: 10 } } },
-        y: { display: false, grid: { display: false }, min: 0 }
-    },
-    plugins: {
-        legend: { position: 'top', labels: { font: { family: 'Montserrat', weight: 'bold' } } }
-    }
+    scales: { x: { grid: { display: false }, ticks: { font: { family: 'Montserrat', weight: 'bold', size: 10 } } }, y: { display: false, grid: { display: false }, min: 0 } },
+    plugins: { legend: { position: 'top', labels: { font: { family: 'Montserrat', weight: 'bold' } } } }
 };
 
 function dibujarGraficos(vData, vTendenciaData) {
     const ctxLinea = document.getElementById('chartLine').getContext('2d');
     let mesesOrdenados = [...new Set(vTendenciaData.map(item => item.mes))].sort((a, b) => getMesNum(a) - getMesNum(b));
-    
     const totActual = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.actual, 0));
     const totPasado = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.pasado, 0));
 
     if(graficoLinea) graficoLinea.destroy();
     graficoLinea = new Chart(ctxLinea, {
         type: 'line',
-        data: {
-            labels: mesesOrdenados,
-            datasets: [
-                { label: 'Año Actual', data: totActual, borderColor: '#012094', backgroundColor: '#012094', tension: 0.3, borderWidth: 4, pointRadius: 5 },
-                { label: 'Año Pasado', data: totPasado, borderColor: '#E1251B', backgroundColor: '#E1251B', tension: 0.3, borderWidth: 4, pointRadius: 5 }
-            ]
-        }, 
-        options: {
-            ...configBaseGrafico,
-            layout: { padding: { top: 40, right: 40, bottom: 20, left: 40 } },
-            plugins: {
-                ...configBaseGrafico.plugins,
-                datalabels: {
-                    color: function(context) { return context.dataset.borderColor; },
-                    anchor: function(context) { return context.datasetIndex === 0 ? 'end' : 'start'; },
-                    align: function(context) { return context.datasetIndex === 0 ? 'top' : 'bottom'; },
-                    offset: 6, font: { family: 'Montserrat', weight: '800', size: 11 },
-                    formatter: function(value) { return formatNumber(value); }
-                }
-            }
-        }
+        data: { labels: mesesOrdenados, datasets: [ { label: 'Año Actual', data: totActual, borderColor: '#012094', backgroundColor: '#012094', tension: 0.3, borderWidth: 4, pointRadius: 5 }, { label: 'Año Pasado', data: totPasado, borderColor: '#E1251B', backgroundColor: '#E1251B', tension: 0.3, borderWidth: 4, pointRadius: 5 } ] }, 
+        options: { ...configBaseGrafico, layout: { padding: { top: 40, right: 40, bottom: 20, left: 40 } }, plugins: { ...configBaseGrafico.plugins, datalabels: { color: function(context) { return context.dataset.borderColor; }, anchor: function(context) { return context.datasetIndex === 0 ? 'end' : 'start'; }, align: function(context) { return context.datasetIndex === 0 ? 'top' : 'bottom'; }, offset: 6, font: { family: 'Montserrat', weight: '800', size: 11 }, formatter: function(value) { return formatNumber(value); } } } }
     });
     
     const configBarrasTop = JSON.parse(JSON.stringify(configBaseGrafico));
     configBarrasTop.layout.padding = { top: 60, right: 10, bottom: 0, left: 10 };
-    configBarrasTop.plugins.datalabels = {
-        color: '#444', anchor: 'end', align: 'end', offset: 5,
-        font: { family: 'Montserrat', weight: '800', size: 10 },
-        rotation: -45,
-        formatter: function(value) { return formatNumber(value); }
-    };
+    configBarrasTop.plugins.datalabels = { color: '#444', anchor: 'end', align: 'end', offset: 5, font: { family: 'Montserrat', weight: '800', size: 10 }, rotation: -45, formatter: function(value) { return formatNumber(value); } };
 
     const ctxDiv = document.getElementById('chartDiv').getContext('2d');
     let resDiv = {};
     vData.forEach(d => { if (!resDiv[d.division]) resDiv[d.division] = { act: 0, pas: 0 }; resDiv[d.division].act += d.actual; resDiv[d.division].pas += d.pasado; });
     let t10Div = Object.entries(resDiv).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.act - a.act).slice(0, 10);
-
     if(graficoDiv) graficoDiv.destroy();
     graficoDiv = new Chart(ctxDiv, { type: 'bar', data: { labels: t10Div.map(d => d.name), datasets: [ { label: 'Venta Actual', data: t10Div.map(d => d.act), backgroundColor: '#012094' }, { label: 'Venta Pasada', data: t10Div.map(d => d.pas), backgroundColor: '#E1251B' } ] }, options: configBarrasTop });
 
@@ -255,111 +222,82 @@ function dibujarGraficos(vData, vTendenciaData) {
     let resCat = {};
     vData.forEach(d => { if (!resCat[d.categoria]) resCat[d.categoria] = { act: 0, pas: 0 }; resCat[d.categoria].act += d.actual; resCat[d.categoria].pas += d.pasado; });
     let t10Cat = Object.entries(resCat).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.act - a.act).slice(0, 10);
-
     if(graficoCat) graficoCat.destroy();
     graficoCat = new Chart(ctxCat, { type: 'bar', data: { labels: t10Cat.map(d => d.name), datasets: [ { label: 'Venta Actual', data: t10Cat.map(d => d.act), backgroundColor: '#012094' }, { label: 'Venta Pasada', data: t10Cat.map(d => d.pas), backgroundColor: '#E1251B' } ] }, options: configBarrasTop });
 }
 
-// 7. ORDENAMIENTO Y PREPARACIÓN DE TABLAS
-function ordenarDatos(dataset, sortCol, sortAsc) {
-    return dataset.sort((a, b) => {
-        let valA = a[sortCol];
-        let valB = b[sortCol];
-        if (typeof valA === 'string') {
-            return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        } else {
-            return sortAsc ? valA - valB : valB - valA;
-        }
+// LÓGICA UNIVERSAL DE TABLAS
+function procesarAgrupacion(vData, sData, keyName) {
+    let map = {};
+    vData.forEach(d => { 
+        let k = d[keyName]; 
+        if(!map[k]) map[k] = {nombre: k, vAct:0, vPas:0, sAct:0, sPas:0}; 
+        map[k].vAct += d.actual; map[k].vPas += d.pasado; 
     });
-}
-
-function actualizarIconosOrden(tabla, col) {
-    document.querySelectorAll(`#tabla${tabla === 'tiendas' ? 'GerencialTiendas' : 'DetalleGrupos'} .sort-icon`).forEach(el => {
-        el.innerHTML = ''; el.classList.remove('active');
+    sData.forEach(d => { 
+        let k = d[keyName]; 
+        if(!map[k]) map[k] = {nombre: k, vAct:0, vPas:0, sAct:0, sPas:0}; 
+        map[k].sAct += d.sAct; map[k].sPas += d.sPas; 
     });
-    let icon = document.getElementById(`sort-${tabla}-${col}`);
-    if(icon) {
-        icon.innerHTML = (tabla === 'tiendas' ? stateTiendas.sortAsc : stateGrupos.sortAsc) ? '&#9650;' : '&#9660;';
-        icon.classList.add('active');
-    }
-}
-
-function ordenarTabla(tabla, col) {
-    if (tabla === 'tiendas') {
-        if (stateTiendas.sortCol === col) stateTiendas.sortAsc = !stateTiendas.sortAsc;
-        else { stateTiendas.sortCol = col; stateTiendas.sortAsc = false; }
-        stateTiendas.data = ordenarDatos(stateTiendas.data, stateTiendas.sortCol, stateTiendas.sortAsc);
-        renderTablaTiendas();
-        actualizarIconosOrden('tiendas', col);
-    } else {
-        if (stateGrupos.sortCol === col) stateGrupos.sortAsc = !stateGrupos.sortAsc;
-        else { stateGrupos.sortCol = col; stateGrupos.sortAsc = false; }
-        stateGrupos.data = ordenarDatos(stateGrupos.data, stateGrupos.sortCol, stateGrupos.sortAsc);
-        renderTablaGrupos();
-        actualizarIconosOrden('grupos', col);
-    }
+    return Object.values(map).map(g => { g.difV = g.vAct - g.vPas; g.difS = g.sAct - g.sPas; return g; });
 }
 
 function prepararDatosTablas(vData, sData) {
-    let tiendas = [...new Set([...vData.map(d => d.tienda), ...sData.map(d => d.tienda)])];
-    stateTiendas.data = [];
-    tiendas.forEach(t => {
-        let vAct = vData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.actual, 0);
-        let vPas = vData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.pasado, 0);
-        let sAct = sData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.sAct, 0);
-        let sPas = sData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.sPas, 0);
-        let difV = vAct - vPas, difS = sAct - sPas;
-        if (vAct !== 0 || vPas !== 0 || sAct !== 0 || sPas !== 0) stateTiendas.data.push({ tienda: t, vAct, vPas, difV, sAct, sPas, difS });
+    state.divisiones.data = procesarAgrupacion(vData, sData, 'division');
+    state.categorias.data = procesarAgrupacion(vData, sData, 'categoria');
+    state.tiendas.data = procesarAgrupacion(vData, sData, 'tienda');
+    state.grupos.data = procesarAgrupacion(vData, sData, 'grupo');
+
+    Object.keys(state).forEach(k => {
+        state[k].data = ordenarDatos(state[k].data, state[k].sortCol, state[k].sortAsc);
+        state[k].page = 1;
+        renderTabla(k);
+        actualizarIconosOrden(k, state[k].sortCol);
     });
-
-    let gruposMap = {};
-    vData.forEach(d => { if (!gruposMap[d.grupo]) gruposMap[d.grupo] = { nombre: d.grupo, vAct: 0, vPas: 0, sAct: 0, sPas: 0 }; gruposMap[d.grupo].vAct += d.actual; gruposMap[d.grupo].vPas += d.pasado; });
-    sData.forEach(d => { if (!gruposMap[d.grupo]) gruposMap[d.grupo] = { nombre: d.grupo, vAct: 0, vPas: 0, sAct: 0, sPas: 0 }; gruposMap[d.grupo].sAct += d.sAct; gruposMap[d.grupo].sPas += d.sPas; });
-    
-    stateGrupos.data = Object.values(gruposMap).map(g => { g.difV = g.vAct - g.vPas; g.difS = g.sAct - g.sPas; return g; });
-
-    stateTiendas.data = ordenarDatos(stateTiendas.data, stateTiendas.sortCol, stateTiendas.sortAsc);
-    stateGrupos.data = ordenarDatos(stateGrupos.data, stateGrupos.sortCol, stateGrupos.sortAsc);
-
-    stateTiendas.page = 1; stateGrupos.page = 1;
-    renderTablaTiendas(); renderTablaGrupos();
-    actualizarIconosOrden('tiendas', stateTiendas.sortCol);
-    actualizarIconosOrden('grupos', stateGrupos.sortCol);
 }
 
-function cambiarLimite(tipo) {
-    let val = parseInt(document.getElementById(`limit-${tipo}`).value);
-    if(tipo === 'tiendas') { stateTiendas.limit = val; stateTiendas.page = 1; renderTablaTiendas(); }
-    if(tipo === 'grupos') { stateGrupos.limit = val; stateGrupos.page = 1; renderTablaGrupos(); }
+function ordenarDatos(dataset, sortCol, sortAsc) {
+    return dataset.sort((a, b) => {
+        let valA = a[sortCol], valB = b[sortCol];
+        if (typeof valA === 'string') return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        return sortAsc ? valA - valB : valB - valA;
+    });
 }
 
-function cambiarPagina(tipo, dir) {
-    if(tipo === 'tiendas') {
-        const maxPage = Math.ceil(stateTiendas.data.length / stateTiendas.limit);
-        if (stateTiendas.page + dir >= 1 && stateTiendas.page + dir <= maxPage) { stateTiendas.page += dir; renderTablaTiendas(); }
-    }
-    if(tipo === 'grupos') {
-        const maxPage = Math.ceil(stateGrupos.data.length / stateGrupos.limit);
-        if (stateGrupos.page + dir >= 1 && stateGrupos.page + dir <= maxPage) { stateGrupos.page += dir; renderTablaGrupos(); }
-    }
+function ordenarTabla(tablaKey, col) {
+    let s = state[tablaKey];
+    if (s.sortCol === col) s.sortAsc = !s.sortAsc;
+    else { s.sortCol = col; s.sortAsc = false; }
+    s.data = ordenarDatos(s.data, s.sortCol, s.sortAsc);
+    renderTabla(tablaKey);
+    actualizarIconosOrden(tablaKey, col);
 }
 
-function crearFila(item, keyName) {
-    let tr = document.createElement('tr');
-    tr.innerHTML = `<td>${item[keyName]}</td><td>${formatNumber(item.vAct)}</td><td>${formatNumber(item.vPas)}</td><td class="${item.difV >= 0 ? 'pos' : 'neg'}">${item.difV > 0 ? '+' : ''}${formatNumber(item.difV)}</td><td>${formatNumber(item.sAct)}</td><td>${formatNumber(item.sPas)}</td><td class="${item.difS >= 0 ? 'pos' : 'neg'}">${item.difS > 0 ? '+' : ''}${formatNumber(item.difS)}</td>`;
-    return tr;
+function actualizarIconosOrden(tablaKey, col) {
+    document.querySelectorAll(`#${state[tablaKey].tableId} .sort-icon`).forEach(el => { el.innerHTML = ''; el.classList.remove('active'); });
+    let icon = document.getElementById(`sort-${tablaKey}-${col}`);
+    if(icon) { icon.innerHTML = state[tablaKey].sortAsc ? '&#9650;' : '&#9660;'; icon.classList.add('active'); }
 }
 
-function renderTablaTiendas() {
-    const tbody = document.querySelector('#tablaGerencialTiendas tbody'); tbody.innerHTML = '';
-    const startIndex = (stateTiendas.page - 1) * stateTiendas.limit;
-    stateTiendas.data.slice(startIndex, startIndex + stateTiendas.limit).forEach(item => tbody.appendChild(crearFila(item, 'tienda')));
-    document.getElementById('info-tiendas').innerText = `Página ${stateTiendas.page} de ${Math.ceil(stateTiendas.data.length / stateTiendas.limit) || 1} (${stateTiendas.data.length} registros)`;
+function cambiarLimite(tablaKey) {
+    state[tablaKey].limit = parseInt(document.getElementById(`limit-${tablaKey}`).value);
+    state[tablaKey].page = 1; renderTabla(tablaKey);
 }
 
-function renderTablaGrupos() {
-    const tbody = document.querySelector('#tablaDetalleGrupos tbody'); tbody.innerHTML = '';
-    const startIndex = (stateGrupos.page - 1) * stateGrupos.limit;
-    stateGrupos.data.slice(startIndex, startIndex + stateGrupos.limit).forEach(item => tbody.appendChild(crearFila(item, 'nombre')));
-    document.getElementById('info-grupos').innerText = `Página ${stateGrupos.page} de ${Math.ceil(stateGrupos.data.length / stateGrupos.limit) || 1} (${stateGrupos.data.length} grupos)`;
+function cambiarPagina(tablaKey, dir) {
+    let s = state[tablaKey];
+    const maxPage = Math.ceil(s.data.length / s.limit);
+    if (s.page + dir >= 1 && s.page + dir <= maxPage) { s.page += dir; renderTabla(tablaKey); }
+}
+
+function renderTabla(tablaKey) {
+    let s = state[tablaKey];
+    const tbody = document.querySelector(`#${s.tableId} tbody`); tbody.innerHTML = '';
+    const start = (s.page - 1) * s.limit;
+    s.data.slice(start, start + s.limit).forEach(item => {
+        let tr = document.createElement('tr');
+        tr.innerHTML = `<td>${item.nombre}</td><td>${formatNumber(item.vAct)}</td><td>${formatNumber(item.vPas)}</td><td class="${item.difV >= 0 ? 'pos' : 'neg'}">${item.difV > 0 ? '+' : ''}${formatNumber(item.difV)}</td><td>${formatNumber(item.sAct)}</td><td>${formatNumber(item.sPas)}</td><td class="${item.difS >= 0 ? 'pos' : 'neg'}">${item.difS > 0 ? '+' : ''}${formatNumber(item.difS)}</td>`;
+        tbody.appendChild(tr);
+    });
+    document.getElementById(`info-${tablaKey}`).innerText = `Página ${s.page} de ${Math.ceil(s.data.length / s.limit) || 1} (${s.data.length} ${s.label})`;
 }
