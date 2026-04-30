@@ -4,8 +4,8 @@ let datosVentasRaw = [];
 let datosSaldosRaw = [];
 let fMes = 'Todos', fTienda = 'Todos', fDiv = 'Todos', fCat = 'Todos';
 
-// Diccionario de meses para forzar orden real
-const mesesDic = { 'Enero':1, 'Febrero':2, 'Marzo':3, 'Abril':4, 'Mayo':5, 'Junio':6, 'Julio':7, 'Agosto':8, 'Septiembre':9, 'Octubre':10, 'Noviembre':11, 'Diciembre':12 };
+// Diccionario estricto para meses
+const mesesVal = { 'enero':1, 'febrero':2, 'marzo':3, 'abril':4, 'mayo':5, 'junio':6, 'julio':7, 'agosto':8, 'septiembre':9, 'octubre':10, 'noviembre':11, 'diciembre':12 };
 
 let stateTiendas = { data: [], page: 1, limit: 25 };
 let stateGrupos = { data: [], page: 1, limit: 25 };
@@ -23,6 +23,15 @@ function openTab(evt, tabName) {
     document.getElementById(tabName).style.display = "block";
     evt.currentTarget.className += " active";
     if(tabName === 'tab-graficos') actualizarTablero(false);
+}
+
+function limpiarFiltros() {
+    fMes = 'Todos'; fTienda = 'Todos'; fDiv = 'Todos'; fCat = 'Todos';
+    document.getElementById('f-mes').value = 'Todos';
+    document.getElementById('f-tienda').value = 'Todos';
+    document.getElementById('f-division').value = 'Todos';
+    document.getElementById('f-categoria').value = 'Todos';
+    actualizarTablero(true);
 }
 
 function cargarVentas() {
@@ -46,7 +55,6 @@ function cargarVentas() {
                             let pasado = parseFloat(fila[c]) || 0;
                             let actual = parseFloat(fila[c+1]) || 0; 
                             if ((pasado !== 0 || actual !== 0) && mes !== "") {
-                                // Aseguramos que el mes tenga la primera letra mayúscula para que coincida con el diccionario
                                 mes = mes.charAt(0).toUpperCase() + mes.slice(1).toLowerCase();
                                 procesado.push({ mes, tienda, division, categoria, grupo: grupoReal, pasado, actual });
                             }
@@ -67,6 +75,7 @@ function cargarSaldos() {
                 let procesado = [];
                 resultados.data.forEach(fila => {
                     if(fila.Name) {
+                        // Corrección Saldos Invertidos: Actual = Saldo_Total_Actual
                         let sAct = parseFloat(fila.Saldo_Total_Actual) || 0; 
                         let sPas = parseFloat(fila.Saldo_Total_Anterior) || 0; 
                         const grupoReal = fila.Grupo || fila.Group || (fila.Division + " - " + fila.Categoria); 
@@ -84,7 +93,7 @@ Promise.all([cargarVentas(), cargarSaldos()]).then(archivos => {
     datosSaldosRaw = archivos[1];
     document.getElementById('loading').style.display = 'none';
     document.getElementById('kpi-container').style.display = 'grid';
-    document.getElementById('filtros-container').style.display = 'flex';
+    document.getElementById('filtros-wrapper').style.display = 'flex';
     document.getElementById('tabs-container').style.display = 'flex';
     document.getElementById('graficos-container').style.display = 'block';
     
@@ -104,8 +113,10 @@ function inicializarFiltrosDOM() {
     });
 }
 
+function getMesNum(m) { return mesesVal[m.toLowerCase()] || 99; }
+
 function actualizarFiltrosDisponibles(vFiltradas) {
-    let mesesAct = [...new Set(datosVentasRaw.map(d => d.mes))].sort((a, b) => (mesesDic[a] || 99) - (mesesDic[b] || 99));
+    let mesesAct = [...new Set(datosVentasRaw.map(d => d.mes))].sort((a, b) => getMesNum(a) - getMesNum(b));
     let tiendasAct = [...new Set(datosVentasRaw.map(d => d.tienda))].sort();
     let divAct = fTienda === 'Todos' ? [...new Set(datosVentasRaw.map(d => d.division))] : [...new Set(vFiltradas.map(d => d.division))];
     let catAct = (fTienda === 'Todos' && fDiv === 'Todos') ? [...new Set(datosVentasRaw.map(d => d.categoria))] : [...new Set(vFiltradas.map(d => d.categoria))];
@@ -163,10 +174,10 @@ function actualizarKPIs(vData, sData) {
     divSDif.className = 'kpi-dif ' + (sDif >= 0 ? 'pos' : 'neg');
 }
 
-// Configuración Base de Gráficos (Ajustada para móvil y legibilidad)
+// Configuración Base Gráficos - Fondo transparente
 const configBaseGrafico = {
     responsive: true, maintainAspectRatio: false,
-    layout: { padding: { top: 40, right: 20, bottom: 0, left: 20 } },
+    layout: { padding: { top: 30, right: 20, bottom: 0, left: 20 } },
     scales: {
         x: { grid: { display: false }, ticks: { font: { family: 'Montserrat', weight: 'bold', size: 10 } } },
         y: { display: false, grid: { display: false }, min: 0 }
@@ -178,9 +189,9 @@ const configBaseGrafico = {
 
 function dibujarGraficos(vData, vTendenciaData) {
     
-    // --- LÍNEA DE TIEMPO ---
+    // --- LÍNEA DE TIEMPO (Orden Cronológico Forzado) ---
     const ctxLinea = document.getElementById('chartLine').getContext('2d');
-    let mesesOrdenados = [...new Set(vTendenciaData.map(item => item.mes))].sort((a, b) => (mesesDic[a] || 99) - (mesesDic[b] || 99));
+    let mesesOrdenados = [...new Set(vTendenciaData.map(item => item.mes))].sort((a, b) => getMesNum(a) - getMesNum(b));
     
     const totActual = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.actual, 0));
     const totPasado = mesesOrdenados.map(m => vTendenciaData.filter(d => d.mes === m).reduce((s, d) => s + d.pasado, 0));
@@ -202,7 +213,7 @@ function dibujarGraficos(vData, vTendenciaData) {
                 ...configBaseGrafico.plugins,
                 datalabels: {
                     color: function(context) { return context.dataset.borderColor; },
-                    anchor: function(context) { return context.datasetIndex === 0 ? 'end' : 'start'; },
+                    anchor: function(context) { return context.datasetIndex === 0 ? 'end' : 'start'; }, // Actual arriba, Pasado abajo
                     align: function(context) { return context.datasetIndex === 0 ? 'top' : 'bottom'; },
                     offset: 6, font: { family: 'Montserrat', weight: '800', size: 11 },
                     formatter: function(value) { return formatNumber(value); }
@@ -211,17 +222,16 @@ function dibujarGraficos(vData, vTendenciaData) {
         }
     });
     
-    // Configuración para que las etiquetas de las barras estén verticales (rotation: -90)
+    // Configuración Barras - Etiquetas a -45 grados
     const configBarrasTop = JSON.parse(JSON.stringify(configBaseGrafico));
     configBarrasTop.layout.padding = { top: 60, right: 10, bottom: 0, left: 10 };
     configBarrasTop.plugins.datalabels = {
         color: '#444', anchor: 'end', align: 'end', offset: 5,
         font: { family: 'Montserrat', weight: '800', size: 10 },
-        rotation: -90, // ETIQUETAS VERTICALES
+        rotation: -45, // ETIQUETAS A 45 GRADOS
         formatter: function(value) { return formatNumber(value); }
     };
 
-    // --- TOP DIVISIONES ---
     const ctxDiv = document.getElementById('chartDiv').getContext('2d');
     let resDiv = {};
     vData.forEach(d => { if (!resDiv[d.division]) resDiv[d.division] = { act: 0, pas: 0 }; resDiv[d.division].act += d.actual; resDiv[d.division].pas += d.pasado; });
@@ -230,7 +240,6 @@ function dibujarGraficos(vData, vTendenciaData) {
     if(graficoDiv) graficoDiv.destroy();
     graficoDiv = new Chart(ctxDiv, { type: 'bar', data: { labels: t10Div.map(d => d.name), datasets: [ { label: 'Venta Actual', data: t10Div.map(d => d.act), backgroundColor: '#012094' }, { label: 'Venta Pasada', data: t10Div.map(d => d.pas), backgroundColor: '#E1251B' } ] }, options: configBarrasTop });
 
-    // --- TOP CATEGORÍAS ---
     const ctxCat = document.getElementById('chartCat').getContext('2d');
     let resCat = {};
     vData.forEach(d => { if (!resCat[d.categoria]) resCat[d.categoria] = { act: 0, pas: 0 }; resCat[d.categoria].act += d.actual; resCat[d.categoria].pas += d.pasado; });
@@ -281,7 +290,7 @@ function crearFila(item, keyName) {
     let difV = item.vAct - item.vPas;
     let difS = item.sAct - item.sPas;
     let tr = document.createElement('tr');
-    tr.innerHTML = `<td>${item[keyName]}</td><td>${formatNumber(item.vAct)}</td><td>${formatNumber(item.vPas)}</td><td class="${difV >= 0 ? 'pos' : 'neg'}" style="border-right: 2px solid #eee;">${difV > 0 ? '+' : ''}${formatNumber(difV)}</td><td>${formatNumber(item.sAct)}</td><td>${formatNumber(item.sPas)}</td><td class="${difS >= 0 ? 'pos' : 'neg'}">${difS > 0 ? '+' : ''}${formatNumber(difS)}</td>`;
+    tr.innerHTML = `<td>${item[keyName]}</td><td>${formatNumber(item.vAct)}</td><td>${formatNumber(item.vPas)}</td><td class="${difV >= 0 ? 'pos' : 'neg'}">${difV > 0 ? '+' : ''}${formatNumber(difV)}</td><td>${formatNumber(item.sAct)}</td><td>${formatNumber(item.sPas)}</td><td class="${difS >= 0 ? 'pos' : 'neg'}">${difS > 0 ? '+' : ''}${formatNumber(difS)}</td>`;
     return tr;
 }
 
