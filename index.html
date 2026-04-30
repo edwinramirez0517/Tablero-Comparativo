@@ -7,47 +7,47 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <!-- Fuente limpia y corporativa (similar a Santral) -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --primary: #012094; /* Azul Compadre */
-            --secondary: #E1251B; /* Rojo Compadre */
+            --primary: #012094; 
+            --secondary: #E1251B; 
             --bg: #ffffff; 
             --text: #333333; 
         }
         body { font-family: 'Montserrat', sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text); position: relative; min-height: 100vh; }
         
-        /* --- MARCA DE AGUA --- */
-        .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.05; z-index: -1; pointer-events: none; width: 60%; display: flex; justify-content: center; }
-        .watermark img { max-width: 100%; height: auto; }
+        /* --- MARCA DE AGUA AJUSTADA --- */
+        .watermark { position: fixed; top: 55%; left: 50%; transform: translate(-50%, -50%); opacity: 0.05; z-index: -1; pointer-events: none; width: 50%; text-align: center; }
+        .watermark img { max-width: 100%; height: auto; object-fit: contain; }
 
-        /* --- ENCABEZADO CON LOGO --- */
-        header { background-color: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header-brand { display: flex; align-items: center; gap: 15px; }
-        .header-brand img { height: 45px; background: white; padding: 5px; border-radius: 4px; } /* Espacio para el logo */
-        header h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+        /* --- ENCABEZADO Y LOGO AJUSTADOS --- */
+        header { background-color: var(--primary); color: white; padding: 12px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header-brand { display: flex; align-items: center; gap: 20px; }
+        .logo-container { background: white; padding: 5px 15px; border-radius: 6px; display: flex; align-items: center; justify-content: center; height: 50px; }
+        .logo-container img { max-height: 40px; width: auto; object-fit: contain; }
+        header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 1px; line-height: 1.2; }
         header .subtitle { font-size: 13px; font-weight: 400; opacity: 0.9; }
         
         .container { padding: 20px 30px; }
         
-        /* --- TARJETAS KPI (NUEVO) --- */
+        /* --- TARJETAS KPI --- */
         .kpi-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
         .kpi-card { background: #fff; padding: 20px; border-radius: 8px; border-top: 5px solid var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.08); text-align: center; }
         .kpi-card.red-accent { border-top-color: var(--secondary); }
-        .kpi-title { font-size: 13px; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 10px; }
-        .kpi-value { font-size: 26px; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
-        .kpi-dif { font-size: 14px; font-weight: 700; padding: 4px 8px; border-radius: 20px; display: inline-block; }
+        .kpi-title { font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 10px; }
+        .kpi-value { font-size: 28px; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
+        .kpi-dif { font-size: 13px; font-weight: 700; padding: 4px 8px; border-radius: 20px; display: inline-block; }
         
         /* --- FILTROS GLOBALES --- */
         .filters { display: flex; gap: 15px; padding: 15px 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px; flex-wrap: wrap; border-left: 4px solid var(--primary); }
         .filter-group { display: flex; flex-direction: column; min-width: 150px; }
         .filter-group label { font-size: 11px; font-weight: 700; color: var(--primary); margin-bottom: 5px; text-transform: uppercase; }
-        .filter-group select { padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #444; cursor: pointer; }
+        .filter-group select { padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #444; cursor: pointer; max-width: 250px; }
         
-        /* --- PESTAÑAS (TABS) --- */
+        /* --- PESTAÑAS --- */
         .tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #eee; }
-        .tab-button { padding: 12px 25px; background: none; border: none; border-bottom: 4px solid transparent; cursor: pointer; font-size: 15px; font-weight: 700; color: #888; transition: 0.3s; font-family: 'Montserrat', sans-serif; }
+        .tab-button { padding: 12px 25px; background: none; border: none; border-bottom: 4px solid transparent; cursor: pointer; font-size: 14px; font-weight: 700; color: #888; transition: 0.3s; font-family: 'Montserrat', sans-serif; }
         .tab-button:hover { color: var(--primary); background-color: #f8f9fa; border-radius: 8px 8px 0 0; }
         .tab-button.active { color: var(--primary); border-bottom-color: var(--secondary); }
         .tab-content { display: none; animation: fadeIn 0.4s; }
@@ -62,36 +62,36 @@
         .chart-title::before { content: ""; display: block; width: 12px; height: 12px; background-color: var(--secondary); border-radius: 50%; }
         .chart-wrapper { position: relative; height: 380px; width: 100%; }
         
-        /* --- TABLAS Y PAGINACIÓN --- */
-        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: var(--primary); padding: 10px 15px; border-radius: 6px 6px 0 0; color: white; }
+        /* --- TABLAS ALINEADAS AL CENTRO --- */
+        .table-controls { display: flex; justify-content: space-between; align-items: center; background: var(--primary); padding: 10px 15px; border-radius: 6px 6px 0 0; color: white; }
         .table-controls select { padding: 5px; border-radius: 4px; border: none; font-weight: 600; cursor: pointer; }
-        .pagination-info { font-size: 13px; font-weight: 600; }
-        .btn-page { background: white; color: var(--primary); border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: 700; margin-left: 5px; }
+        .pagination-info { font-size: 12px; font-weight: 600; }
+        .btn-page { background: white; color: var(--primary); border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: 700; margin-left: 5px; font-size: 11px;}
         .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .table-container { overflow-x: auto; border: 1px solid #eee; border-radius: 0 0 6px 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
         thead { position: sticky; top: 0; z-index: 10; }
-        th { background-color: #f8f9fa; color: var(--primary); padding: 12px 10px; text-align: right; font-weight: 800; border-bottom: 2px solid var(--secondary); text-transform: uppercase; font-size: 11px; }
-        th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background-color: #fff; z-index: 5; border-right: 2px solid #eee; font-weight: 700; color: var(--primary); }
-        th:first-child { background-color: #f8f9fa; z-index: 11; }
-        td { padding: 12px 10px; text-align: right; border-bottom: 1px solid #f0f0f0; color: #444; font-weight: 600; }
         
-        .pos { color: #00A651 !important; font-weight: 800; background: rgba(0, 166, 81, 0.1); border-radius: 4px; } 
-        .neg { color: var(--secondary) !important; font-weight: 800; background: rgba(225, 37, 27, 0.1); border-radius: 4px; } 
+        /* ALINEACIÓN CENTRAL */
+        th { background-color: #01186e; color: white; padding: 12px 10px; text-align: center; font-weight: 800; border: 1px solid #012094; text-transform: uppercase; font-size: 10px; }
+        td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #f0f0f0; color: #444; font-weight: 600; }
+        
+        /* Solo la primera columna a la izquierda */
+        th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background-color: #fff; z-index: 5; border-right: 2px solid #eee; font-weight: 700; color: var(--primary); }
+        th:first-child { background-color: #01186e; color: white; z-index: 11; }
+        
+        .pos { color: #00A651 !important; font-weight: 800; background: rgba(0, 166, 81, 0.1); } 
+        .neg { color: var(--secondary) !important; font-weight: 800; background: rgba(225, 37, 27, 0.1); } 
     </style>
 </head>
 <body>
 
-    <!-- MARCA DE AGUA (Requiere archivo marca_agua.png en GitHub) -->
-    <div class="watermark">
-        <img src="marca_agua.png" onerror="this.style.display='none'" alt="Marca de Agua">
-    </div>
+    <div class="watermark"><img src="marca_agua.png" onerror="this.style.display='none'" alt="Marca de Agua"></div>
 
     <header>
         <div class="header-brand">
-            <!-- LOGO (Requiere archivo logo.png en GitHub) -->
-            <img src="logo.png" onerror="this.style.display='none'" alt="Logo">
+            <div class="logo-container"><img src="logo.png" onerror="this.style.display='none'" alt="Logo Compadre"></div>
             <div>
                 <h1>EL COMPADRE</h1>
                 <div class="subtitle">Tablero Comparativo Gerencial Interactivo</div>
@@ -100,33 +100,17 @@
     </header>
 
     <div class="container">
-        <div id="loading" style="text-align:center; padding:40px; font-weight:800; color:var(--primary); font-size: 20px;">
-            Sincronizando información logística...
+        <div id="loading" style="text-align:center; padding:40px; font-weight:800; color:var(--primary); font-size: 18px;">
+            Sincronizando información logística, por favor espera...
         </div>
 
-        <!-- TARJETAS KPI GERENCIALES -->
         <div class="kpi-container" id="kpi-container" style="display:none;">
-            <div class="kpi-card">
-                <div class="kpi-title">Venta Total Actual</div>
-                <div class="kpi-value" id="kpi-ventas-act">0</div>
-                <div class="kpi-dif" id="kpi-ventas-dif">0</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">Venta Total Pasada</div>
-                <div class="kpi-value" id="kpi-ventas-pas" style="color: #666;">0</div>
-            </div>
-            <div class="kpi-card red-accent">
-                <div class="kpi-title">Saldo Inventario Actual</div>
-                <div class="kpi-value" id="kpi-saldos-act" style="color: var(--secondary);">0</div>
-                <div class="kpi-dif" id="kpi-saldos-dif">0</div>
-            </div>
-            <div class="kpi-card red-accent">
-                <div class="kpi-title">Saldo Inventario Pasado</div>
-                <div class="kpi-value" id="kpi-saldos-pas" style="color: #666;">0</div>
-            </div>
+            <div class="kpi-card"><div class="kpi-title">Venta Total Actual</div><div class="kpi-value" id="kpi-ventas-act">0</div><div class="kpi-dif" id="kpi-ventas-dif">0</div></div>
+            <div class="kpi-card"><div class="kpi-title">Venta Total Pasada</div><div class="kpi-value" id="kpi-ventas-pas" style="color: #666;">0</div></div>
+            <div class="kpi-card red-accent"><div class="kpi-title">Saldo Inventario Actual</div><div class="kpi-value" id="kpi-saldos-act" style="color: var(--secondary);">0</div><div class="kpi-dif" id="kpi-saldos-dif">0</div></div>
+            <div class="kpi-card red-accent"><div class="kpi-title">Saldo Inventario Pasado</div><div class="kpi-value" id="kpi-saldos-pas" style="color: #666;">0</div></div>
         </div>
 
-        <!-- FILTROS GLOBALES (Se eliminó Tipo de Tienda) -->
         <div class="filters" id="filtros-container" style="display:none;">
             <div class="filter-group"><label>Mes</label><select id="f-mes"><option value="Todos">-- Todos --</option></select></div>
             <div class="filter-group"><label>Tienda</label><select id="f-tienda"><option value="Todos">-- Todas --</option></select></div>
@@ -134,16 +118,14 @@
             <div class="filter-group"><label>Categoría</label><select id="f-categoria"><option value="Todos">-- Todas --</option></select></div>
         </div>
 
-        <!-- TABS -->
         <div class="tabs" id="tabs-container" style="display:none;">
             <button class="tab-button active" onclick="openTab(event, 'tab-graficos')">Resumen Visual</button>
             <button class="tab-button" onclick="openTab(event, 'tab-tiendas')">Detalle por Tienda</button>
-            <button class="tab-button" onclick="openTab(event, 'tab-grupos')">Detalle por Grupo (Unificado)</button>
+            <button class="tab-button" onclick="openTab(event, 'tab-grupos')">Detalle por Grupo</button>
         </div>
 
         <div id="graficos-container" style="display:none;">
             
-            <!-- PESTAÑA 1: GRÁFICOS -->
             <div id="tab-graficos" class="tab-content active">
                 <div class="grid-charts">
                     <div class="chart-box full-width">
@@ -161,36 +143,22 @@
                 </div>
             </div>
 
-            <!-- PESTAÑA 2: TABLA DE TIENDAS -->
             <div id="tab-tiendas" class="tab-content">
                 <div class="table-controls">
-                    <div>
-                        Mostrar 
-                        <select id="limit-tiendas" onchange="cambiarLimite('tiendas')">
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                            <option value="999999">Todas</option>
-                        </select> 
-                        filas
-                    </div>
-                    <div>
-                        <span class="pagination-info" id="info-tiendas">Mostrando 0 de 0</span>
-                        <button class="btn-page" onclick="cambiarPagina('tiendas', -1)">&#9664; Ant</button>
-                        <button class="btn-page" onclick="cambiarPagina('tiendas', 1)">Sig &#9654;</button>
-                    </div>
+                    <div>Mostrar <select id="limit-tiendas" onchange="cambiarLimite('tiendas')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
+                    <div><span class="pagination-info" id="info-tiendas">Mostrando 0 de 0</span><button class="btn-page" onclick="cambiarPagina('tiendas', -1)">&#9664; Ant</button><button class="btn-page" onclick="cambiarPagina('tiendas', 1)">Sig &#9654;</button></div>
                 </div>
                 <div class="table-container">
                     <table id="tablaGerencialTiendas">
                         <thead>
                             <tr>
-                                <th style="width: 25%;">Tienda</th>
-                                <th>Venta Actual</th>
-                                <th>Venta Pasada</th>
-                                <th style="border-right: 2px solid #ddd;">Dif. Venta</th>
-                                <th>Saldo Actual</th>
-                                <th>Saldo Pasado</th>
-                                <th>Dif. Saldo</th>
+                                <th rowspan="2" style="width: 25%; vertical-align: bottom;">Tienda</th>
+                                <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
+                                <th colspan="3">INVENTARIO (Saldos)</th>
+                            </tr>
+                            <tr>
+                                <th>Venta Actual</th><th>Venta Pasada</th><th style="border-right: 2px solid #fff;">Dif. Venta</th>
+                                <th>Saldo Actual</th><th>Saldo Pasado</th><th>Dif. Saldo</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -198,36 +166,22 @@
                 </div>
             </div>
 
-            <!-- PESTAÑA 3: TABLA DE GRUPOS -->
             <div id="tab-grupos" class="tab-content">
                 <div class="table-controls" style="background-color: var(--secondary);">
-                    <div>
-                        Mostrar 
-                        <select id="limit-grupos" onchange="cambiarLimite('grupos')">
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                            <option value="999999">Todas</option>
-                        </select> 
-                        filas
-                    </div>
-                    <div>
-                        <span class="pagination-info" id="info-grupos">Mostrando 0 de 0</span>
-                        <button class="btn-page" style="color:var(--secondary);" onclick="cambiarPagina('grupos', -1)">&#9664; Ant</button>
-                        <button class="btn-page" style="color:var(--secondary);" onclick="cambiarPagina('grupos', 1)">Sig &#9654;</button>
-                    </div>
+                    <div>Mostrar <select id="limit-grupos" onchange="cambiarLimite('grupos')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
+                    <div><span class="pagination-info" id="info-grupos">Mostrando 0 de 0</span><button class="btn-page" style="color:var(--secondary);" onclick="cambiarPagina('grupos', -1)">&#9664; Ant</button><button class="btn-page" style="color:var(--secondary);" onclick="cambiarPagina('grupos', 1)">Sig &#9654;</button></div>
                 </div>
                 <div class="table-container">
                     <table id="tablaDetalleGrupos">
                         <thead>
                             <tr>
-                                <th style="width: 25%;">Grupo</th>
-                                <th>Venta Actual</th>
-                                <th>Venta Pasada</th>
-                                <th style="border-right: 2px solid #ddd;">Dif. Venta</th>
-                                <th>Saldo Actual</th>
-                                <th>Saldo Pasado</th>
-                                <th>Dif. Saldo</th>
+                                <th rowspan="2" style="width: 30%; vertical-align: bottom;">Grupo (Extraído de CSV)</th>
+                                <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
+                                <th colspan="3">INVENTARIO (Saldos)</th>
+                            </tr>
+                            <tr>
+                                <th>Venta Actual</th><th>Venta Pasada</th><th style="border-right: 2px solid #fff;">Dif. Venta</th>
+                                <th>Saldo Actual</th><th>Saldo Pasado</th><th>Dif. Saldo</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
