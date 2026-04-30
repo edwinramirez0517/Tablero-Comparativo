@@ -25,7 +25,6 @@
         .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.12; z-index: -1; pointer-events: none; width: 70%; text-align: center; }
         .watermark img { max-width: 100%; max-height: 80vh; object-fit: contain; }
 
-        /* HEADER CON INSIGNIA DE PERÍODO */
         header { background-color: var(--primary); color: white; padding: 15px 30px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-wrap: wrap; gap: 15px;}
         .header-left { display: flex; align-items: center; }
         .logo-container { padding: 5px 20px 5px 0; display: flex; align-items: center; justify-content: center; height: 90px; margin-right: 20px; }
@@ -87,9 +86,25 @@
         tbody th, tbody td:first-child, thead th:first-child { position: sticky; left: 0; z-index: 5; text-align: left; border-right: 2px solid #ccc; }
         thead tr:first-child th:first-child { z-index: 25; background-color: #01186e; color: white; border-bottom: none;} 
         
-        tbody td:first-child { background-color: #f8f9fa; font-weight: 700; color: var(--primary); }
-        td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #f0f0f0; color: #444; font-weight: 600; background-color: transparent;}
+        /* DISEÑO DE FILAS: Zebra Striping y Efecto Hover/Click */
+        tbody td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #f0f0f0; color: #444; font-weight: 600; background-color: #ffffff; transition: background-color 0.2s ease;}
+        tbody td:first-child { font-weight: 700; color: var(--primary); }
         
+        /* Filas alternas (Zebra) */
+        tbody tr:nth-child(even) td { background-color: #f4f6fc; }
+        
+        /* Efecto al pasar el mouse (Hover) */
+        tbody tr:hover td { background-color: #dbe4f9 !important; cursor: pointer; }
+        
+        /* Efecto de Fila Seleccionada al hacer Clic */
+        .row-selected td { 
+            background-color: #c4d4f6 !important; 
+            color: var(--primary) !important; 
+            font-weight: 800 !important;
+            border-top: 1px solid var(--primary);
+            border-bottom: 1px solid var(--primary);
+        }
+
         .pos { color: #00A651 !important; font-weight: 800; background: rgba(0, 166, 81, 0.1); } 
         .neg { color: var(--secondary) !important; font-weight: 800; background: rgba(225, 37, 27, 0.1); } 
     </style>
@@ -112,7 +127,6 @@
                 <div class="subtitle">Tablero Comparativo Gerencial Interactivo</div>
             </div>
         </div>
-        <!-- INSIGNIA DE PERÍODO -->
         <div class="period-badge" id="badge-periodo">
             PERÍODO: Acumulado vs Año Anterior
         </div>
@@ -140,11 +154,12 @@
             <button class="btn-clear" onclick="limpiarFiltros()">Limpiar Filtros</button>
         </div>
 
+        <!-- ORDEN DE PESTAÑAS AJUSTADO -->
         <div class="tabs" id="tabs-container" style="display:none;">
             <button class="tab-button active" onclick="openTab(event, 'tab-graficos')">Resumen Visual</button>
+            <button class="tab-button" onclick="openTab(event, 'tab-tiendas')">Detalle por Tienda</button>
             <button class="tab-button" onclick="openTab(event, 'tab-divisiones')">Resumen por División</button>
             <button class="tab-button" onclick="openTab(event, 'tab-categorias')">Resumen por Categoría</button>
-            <button class="tab-button" onclick="openTab(event, 'tab-tiendas')">Detalle por Tienda</button>
             <button class="tab-button" onclick="openTab(event, 'tab-grupos')">Detalle por Grupo</button>
         </div>
 
@@ -167,11 +182,39 @@
                 </div>
             </div>
 
-            <!-- TABLA 1: DIVISIONES -->
-            <div id="tab-divisiones" class="tab-content">
+            <!-- TABLA 1: TIENDAS (Ordenada) -->
+            <div id="tab-tiendas" class="tab-content">
                 <div class="table-controls bg-secondary">
+                    <div>Mostrar <select id="limit-tiendas" onchange="cambiarLimite('tiendas')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
+                    <div><span class="pagination-info" id="info-tiendas">Mostrando 0 de 0</span><button class="btn-page text-secondary" onclick="cambiarPagina('tiendas', -1)">&#9664; Ant</button><button class="btn-page text-secondary" onclick="cambiarPagina('tiendas', 1)">Sig &#9654;</button></div>
+                </div>
+                <div class="table-responsive-wrapper">
+                    <table id="tablaGerencialTiendas">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="vertical-align: bottom;" onclick="ordenarTabla('tiendas', 'nombre')">Tienda <span id="sort-tiendas-nombre" class="sort-icon"></span></th>
+                                <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
+                                <th colspan="3">INVENTARIO (Saldos)</th>
+                            </tr>
+                            <tr>
+                                <th onclick="ordenarTabla('tiendas', 'vAct')">Venta Actual <span id="sort-tiendas-vAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('tiendas', 'vPas')">Venta Pasada <span id="sort-tiendas-vPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('tiendas', 'difV')" style="border-right: 2px solid #fff;">Dif. Venta <span id="sort-tiendas-difV" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('tiendas', 'sAct')">Saldo Actual <span id="sort-tiendas-sAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('tiendas', 'sPas')">Saldo Pasado <span id="sort-tiendas-sPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('tiendas', 'difS')">Dif. Saldo <span id="sort-tiendas-difS" class="sort-icon"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABLA 2: DIVISIONES -->
+            <div id="tab-divisiones" class="tab-content">
+                <div class="table-controls">
                     <div>Mostrar <select id="limit-divisiones" onchange="cambiarLimite('divisiones')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
-                    <div><span class="pagination-info" id="info-divisiones">Mostrando 0 de 0</span><button class="btn-page text-secondary" onclick="cambiarPagina('divisiones', -1)">&#9664; Ant</button><button class="btn-page text-secondary" onclick="cambiarPagina('divisiones', 1)">Sig &#9654;</button></div>
+                    <div><span class="pagination-info" id="info-divisiones">Mostrando 0 de 0</span><button class="btn-page" onclick="cambiarPagina('divisiones', -1)">&#9664; Ant</button><button class="btn-page" onclick="cambiarPagina('divisiones', 1)">Sig &#9654;</button></div>
                 </div>
                 <div class="table-responsive-wrapper">
                     <table id="tablaResumenDivisiones">
@@ -195,11 +238,11 @@
                 </div>
             </div>
 
-            <!-- TABLA 2: CATEGORÍAS -->
+            <!-- TABLA 3: CATEGORÍAS -->
             <div id="tab-categorias" class="tab-content">
-                <div class="table-controls">
+                <div class="table-controls bg-secondary">
                     <div>Mostrar <select id="limit-categorias" onchange="cambiarLimite('categorias')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
-                    <div><span class="pagination-info" id="info-categorias">Mostrando 0 de 0</span><button class="btn-page" onclick="cambiarPagina('categorias', -1)">&#9664; Ant</button><button class="btn-page" onclick="cambiarPagina('categorias', 1)">Sig &#9654;</button></div>
+                    <div><span class="pagination-info" id="info-categorias">Mostrando 0 de 0</span><button class="btn-page text-secondary" onclick="cambiarPagina('categorias', -1)">&#9664; Ant</button><button class="btn-page text-secondary" onclick="cambiarPagina('categorias', 1)">Sig &#9654;</button></div>
                 </div>
                 <div class="table-responsive-wrapper">
                     <table id="tablaResumenCategorias">
@@ -216,34 +259,6 @@
                                 <th onclick="ordenarTabla('categorias', 'sAct')">Saldo Actual <span id="sort-categorias-sAct" class="sort-icon"></span></th>
                                 <th onclick="ordenarTabla('categorias', 'sPas')">Saldo Pasado <span id="sort-categorias-sPas" class="sort-icon"></span></th>
                                 <th onclick="ordenarTabla('categorias', 'difS')">Dif. Saldo <span id="sort-categorias-difS" class="sort-icon"></span></th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- TABLA 3: TIENDAS -->
-            <div id="tab-tiendas" class="tab-content">
-                <div class="table-controls bg-secondary">
-                    <div>Mostrar <select id="limit-tiendas" onchange="cambiarLimite('tiendas')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
-                    <div><span class="pagination-info" id="info-tiendas">Mostrando 0 de 0</span><button class="btn-page text-secondary" onclick="cambiarPagina('tiendas', -1)">&#9664; Ant</button><button class="btn-page text-secondary" onclick="cambiarPagina('tiendas', 1)">Sig &#9654;</button></div>
-                </div>
-                <div class="table-responsive-wrapper">
-                    <table id="tablaGerencialTiendas">
-                        <thead>
-                            <tr>
-                                <th rowspan="2" style="vertical-align: bottom;" onclick="ordenarTabla('tiendas', 'nombre')">Tienda <span id="sort-tiendas-nombre" class="sort-icon"></span></th>
-                                <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
-                                <th colspan="3">INVENTARIO (Saldos)</th>
-                            </tr>
-                            <tr>
-                                <th onclick="ordenarTabla('tiendas', 'vAct')">Venta Actual <span id="sort-tiendas-vAct" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('tiendas', 'vPas')">Venta Pasada <span id="sort-tiendas-vPas" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('tiendas', 'difV')" style="border-right: 2px solid #fff;">Dif. Venta <span id="sort-tiendas-difV" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('tiendas', 'sAct')">Saldo Actual <span id="sort-tiendas-sAct" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('tiendas', 'sPas')">Saldo Pasado <span id="sort-tiendas-sPas" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('tiendas', 'difS')">Dif. Saldo <span id="sort-tiendas-difS" class="sort-icon"></span></th>
                             </tr>
                         </thead>
                         <tbody></tbody>
