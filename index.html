@@ -63,7 +63,8 @@
         .chart-box { background: rgba(255,255,255,0.5); backdrop-filter: blur(2px); padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.05); }
         .chart-title { font-size: 16px; font-weight: 800; color: var(--primary); margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px; }
         .chart-title::before { content: ""; display: block; width: 12px; height: 12px; background-color: var(--secondary); border-radius: 50%; }
-        .chart-wrapper { position: relative; height: 400px; width: 100%; }
+        .chart-wrapper { position: relative; height: 400px; width: 100%; overflow-x: auto; overflow-y: hidden; }
+        .chart-inner { position: relative; height: 100%; width: 100%; }
         
         /* --- NUEVA ESTRUCTURA DE TABLAS FIJAS --- */
         .table-controls { 
@@ -173,15 +174,15 @@
                 <div class="grid-charts">
                     <div class="chart-box full-width">
                         <h3 class="chart-title">Tendencia Mensual (Línea de Tiempo)</h3>
-                        <div class="chart-wrapper"><canvas id="chartLine"></canvas></div>
+                        <div class="chart-wrapper"><div class="chart-inner" style="min-width: 500px;"><canvas id="chartLine"></canvas></div></div>
                     </div>
                     <div class="chart-box">
                         <h3 class="chart-title">Top 10 Divisiones</h3>
-                        <div class="chart-wrapper"><canvas id="chartDiv"></canvas></div>
+                        <div class="chart-wrapper"><div class="chart-inner" style="min-width: 700px;"><canvas id="chartDiv"></canvas></div></div>
                     </div>
                     <div class="chart-box">
                         <h3 class="chart-title">Top 10 Categorías</h3>
-                        <div class="chart-wrapper"><canvas id="chartCat"></canvas></div>
+                        <div class="chart-wrapper"><div class="chart-inner" style="min-width: 700px;"><canvas id="chartCat"></canvas></div></div>
                     </div>
                 </div>
             </div>
