@@ -6,7 +6,6 @@ let fMes = 'Todos', fTienda = 'Todos', fDiv = 'Todos', fCat = 'Todos';
 
 const mesesVal = { 'enero':1, 'febrero':2, 'marzo':3, 'abril':4, 'mayo':5, 'junio':6, 'julio':7, 'agosto':8, 'septiembre':9, 'octubre':10, 'noviembre':11, 'diciembre':12 };
 
-// Estados para paginación y ORDENAMIENTO
 let stateTiendas = { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false };
 let stateGrupos = { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false };
 
@@ -34,6 +33,7 @@ function limpiarFiltros() {
     actualizarTablero(true);
 }
 
+// 1. CARGA DE VENTAS (Con filtro anti-comas)
 function cargarVentas() {
     return new Promise((resolver, rechazar) => {
         Papa.parse('ventas.csv', {
@@ -52,8 +52,16 @@ function cargarVentas() {
                     for(let c = 7; c < fila.length; c++) {
                         if (metricasRow[c] === 'Venta_Und_Anterior') {
                             let mes = mesesRow[c] ? mesesRow[c].trim() : "";
-                            let pasado = parseFloat(fila[c]) || 0;
-                            let actual = parseFloat(fila[c+1]) || 0; 
+                            
+                            // LIMPIEZA DE COMAS EN VENTAS
+                            let pVal = fila[c];
+                            let pasadoStr = (pVal !== null && pVal !== undefined) ? pVal.toString().replace(/,/g, '') : "0";
+                            let pasado = parseFloat(pasadoStr) || 0;
+                            
+                            let aVal = fila[c+1];
+                            let actualStr = (aVal !== null && aVal !== undefined) ? aVal.toString().replace(/,/g, '') : "0";
+                            let actual = parseFloat(actualStr) || 0; 
+                            
                             if ((pasado !== 0 || actual !== 0) && mes !== "") {
                                 mes = mes.charAt(0).toUpperCase() + mes.slice(1).toLowerCase();
                                 procesado.push({ mes, tienda, division, categoria, grupo: grupoReal, pasado, actual });
@@ -67,6 +75,7 @@ function cargarVentas() {
     });
 }
 
+// 2. CARGA DE SALDOS (Con filtro anti-comas)
 function cargarSaldos() {
     return new Promise((resolver, rechazar) => {
         Papa.parse('saldos.csv', {
@@ -75,8 +84,15 @@ function cargarSaldos() {
                 let procesado = [];
                 resultados.data.forEach(fila => {
                     if(fila.Name) {
-                        let sAct = parseFloat(fila.Saldo_Total_Actual) || 0; 
-                        let sPas = parseFloat(fila.Saldo_Total_Anterior) || 0; 
+                        // LIMPIEZA DE COMAS EN SALDOS
+                        let aVal = fila.Saldo_Total_Actual;
+                        let sActStr = (aVal !== null && aVal !== undefined) ? aVal.toString().replace(/,/g, '') : "0";
+                        let sAct = parseFloat(sActStr) || 0; 
+                        
+                        let pVal = fila.Saldo_Total_Anterior;
+                        let sPasStr = (pVal !== null && pVal !== undefined) ? pVal.toString().replace(/,/g, '') : "0";
+                        let sPas = parseFloat(sPasStr) || 0; 
+                        
                         const grupoReal = fila.Grupo || fila.Group || (fila.Division + " - " + fila.Categoria); 
                         procesado.push({ tienda: fila.Name, division: fila.Division, categoria: fila.Categoria, grupo: grupoReal, sAct: sAct, sPas: sPas });
                     }
@@ -244,7 +260,7 @@ function dibujarGraficos(vData, vTendenciaData) {
     graficoCat = new Chart(ctxCat, { type: 'bar', data: { labels: t10Cat.map(d => d.name), datasets: [ { label: 'Venta Actual', data: t10Cat.map(d => d.act), backgroundColor: '#012094' }, { label: 'Venta Pasada', data: t10Cat.map(d => d.pas), backgroundColor: '#E1251B' } ] }, options: configBarrasTop });
 }
 
-// 7. ORDENAMIENTO DE TABLAS
+// 7. ORDENAMIENTO Y PREPARACIÓN DE TABLAS
 function ordenarDatos(dataset, sortCol, sortAsc) {
     return dataset.sort((a, b) => {
         let valA = a[sortCol];
@@ -302,7 +318,6 @@ function prepararDatosTablas(vData, sData) {
     
     stateGrupos.data = Object.values(gruposMap).map(g => { g.difV = g.vAct - g.vPas; g.difS = g.sAct - g.sPas; return g; });
 
-    // Orden inicial (Venta Actual Mayor a Menor)
     stateTiendas.data = ordenarDatos(stateTiendas.data, stateTiendas.sortCol, stateTiendas.sortAsc);
     stateGrupos.data = ordenarDatos(stateGrupos.data, stateGrupos.sortCol, stateGrupos.sortAsc);
 
