@@ -6,8 +6,9 @@ let fMes = 'Todos', fTienda = 'Todos', fDiv = 'Todos', fCat = 'Todos';
 
 const mesesVal = { 'enero':1, 'febrero':2, 'marzo':3, 'abril':4, 'mayo':5, 'junio':6, 'julio':7, 'agosto':8, 'septiembre':9, 'octubre':10, 'noviembre':11, 'diciembre':12 };
 
-let stateTiendas = { data: [], page: 1, limit: 25 };
-let stateGrupos = { data: [], page: 1, limit: 25 };
+// Estados para paginación y ORDENAMIENTO
+let stateTiendas = { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false };
+let stateGrupos = { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false };
 
 function formatNumber(num) {
     if (num === null || num === undefined) return "0";
@@ -185,8 +186,6 @@ const configBaseGrafico = {
 };
 
 function dibujarGraficos(vData, vTendenciaData) {
-    
-    // --- LÍNEA DE TIEMPO ---
     const ctxLinea = document.getElementById('chartLine').getContext('2d');
     let mesesOrdenados = [...new Set(vTendenciaData.map(item => item.mes))].sort((a, b) => getMesNum(a) - getMesNum(b));
     
@@ -205,7 +204,7 @@ function dibujarGraficos(vData, vTendenciaData) {
         }, 
         options: {
             ...configBaseGrafico,
-            layout: { padding: { top: 40, right: 30, bottom: 20, left: 30 } },
+            layout: { padding: { top: 40, right: 40, bottom: 20, left: 40 } },
             plugins: {
                 ...configBaseGrafico.plugins,
                 datalabels: {
@@ -245,24 +244,72 @@ function dibujarGraficos(vData, vTendenciaData) {
     graficoCat = new Chart(ctxCat, { type: 'bar', data: { labels: t10Cat.map(d => d.name), datasets: [ { label: 'Venta Actual', data: t10Cat.map(d => d.act), backgroundColor: '#012094' }, { label: 'Venta Pasada', data: t10Cat.map(d => d.pas), backgroundColor: '#E1251B' } ] }, options: configBarrasTop });
 }
 
+// 7. ORDENAMIENTO DE TABLAS
+function ordenarDatos(dataset, sortCol, sortAsc) {
+    return dataset.sort((a, b) => {
+        let valA = a[sortCol];
+        let valB = b[sortCol];
+        if (typeof valA === 'string') {
+            return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        } else {
+            return sortAsc ? valA - valB : valB - valA;
+        }
+    });
+}
+
+function actualizarIconosOrden(tabla, col) {
+    document.querySelectorAll(`#tabla${tabla === 'tiendas' ? 'GerencialTiendas' : 'DetalleGrupos'} .sort-icon`).forEach(el => {
+        el.innerHTML = ''; el.classList.remove('active');
+    });
+    let icon = document.getElementById(`sort-${tabla}-${col}`);
+    if(icon) {
+        icon.innerHTML = (tabla === 'tiendas' ? stateTiendas.sortAsc : stateGrupos.sortAsc) ? '&#9650;' : '&#9660;';
+        icon.classList.add('active');
+    }
+}
+
+function ordenarTabla(tabla, col) {
+    if (tabla === 'tiendas') {
+        if (stateTiendas.sortCol === col) stateTiendas.sortAsc = !stateTiendas.sortAsc;
+        else { stateTiendas.sortCol = col; stateTiendas.sortAsc = false; }
+        stateTiendas.data = ordenarDatos(stateTiendas.data, stateTiendas.sortCol, stateTiendas.sortAsc);
+        renderTablaTiendas();
+        actualizarIconosOrden('tiendas', col);
+    } else {
+        if (stateGrupos.sortCol === col) stateGrupos.sortAsc = !stateGrupos.sortAsc;
+        else { stateGrupos.sortCol = col; stateGrupos.sortAsc = false; }
+        stateGrupos.data = ordenarDatos(stateGrupos.data, stateGrupos.sortCol, stateGrupos.sortAsc);
+        renderTablaGrupos();
+        actualizarIconosOrden('grupos', col);
+    }
+}
+
 function prepararDatosTablas(vData, sData) {
-    let tiendas = [...new Set([...vData.map(d => d.tienda), ...sData.map(d => d.tienda)])].sort();
+    let tiendas = [...new Set([...vData.map(d => d.tienda), ...sData.map(d => d.tienda)])];
     stateTiendas.data = [];
     tiendas.forEach(t => {
         let vAct = vData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.actual, 0);
         let vPas = vData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.pasado, 0);
         let sAct = sData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.sAct, 0);
         let sPas = sData.filter(d => d.tienda === t).reduce((sum, d) => sum + d.sPas, 0);
-        if (vAct !== 0 || vPas !== 0 || sAct !== 0 || sPas !== 0) stateTiendas.data.push({ tienda: t, vAct, vPas, sAct, sPas });
+        let difV = vAct - vPas, difS = sAct - sPas;
+        if (vAct !== 0 || vPas !== 0 || sAct !== 0 || sPas !== 0) stateTiendas.data.push({ tienda: t, vAct, vPas, difV, sAct, sPas, difS });
     });
 
     let gruposMap = {};
     vData.forEach(d => { if (!gruposMap[d.grupo]) gruposMap[d.grupo] = { nombre: d.grupo, vAct: 0, vPas: 0, sAct: 0, sPas: 0 }; gruposMap[d.grupo].vAct += d.actual; gruposMap[d.grupo].vPas += d.pasado; });
     sData.forEach(d => { if (!gruposMap[d.grupo]) gruposMap[d.grupo] = { nombre: d.grupo, vAct: 0, vPas: 0, sAct: 0, sPas: 0 }; gruposMap[d.grupo].sAct += d.sAct; gruposMap[d.grupo].sPas += d.sPas; });
-    stateGrupos.data = Object.values(gruposMap).sort((a, b) => a.nombre.localeCompare(b.nombre));
+    
+    stateGrupos.data = Object.values(gruposMap).map(g => { g.difV = g.vAct - g.vPas; g.difS = g.sAct - g.sPas; return g; });
+
+    // Orden inicial (Venta Actual Mayor a Menor)
+    stateTiendas.data = ordenarDatos(stateTiendas.data, stateTiendas.sortCol, stateTiendas.sortAsc);
+    stateGrupos.data = ordenarDatos(stateGrupos.data, stateGrupos.sortCol, stateGrupos.sortAsc);
 
     stateTiendas.page = 1; stateGrupos.page = 1;
     renderTablaTiendas(); renderTablaGrupos();
+    actualizarIconosOrden('tiendas', stateTiendas.sortCol);
+    actualizarIconosOrden('grupos', stateGrupos.sortCol);
 }
 
 function cambiarLimite(tipo) {
@@ -283,10 +330,8 @@ function cambiarPagina(tipo, dir) {
 }
 
 function crearFila(item, keyName) {
-    let difV = item.vAct - item.vPas;
-    let difS = item.sAct - item.sPas;
     let tr = document.createElement('tr');
-    tr.innerHTML = `<td>${item[keyName]}</td><td>${formatNumber(item.vAct)}</td><td>${formatNumber(item.vPas)}</td><td class="${difV >= 0 ? 'pos' : 'neg'}" style="border-right: 2px solid #eee;">${difV > 0 ? '+' : ''}${formatNumber(difV)}</td><td>${formatNumber(item.sAct)}</td><td>${formatNumber(item.sPas)}</td><td class="${difS >= 0 ? 'pos' : 'neg'}">${difS > 0 ? '+' : ''}${formatNumber(difS)}</td>`;
+    tr.innerHTML = `<td>${item[keyName]}</td><td>${formatNumber(item.vAct)}</td><td>${formatNumber(item.vPas)}</td><td class="${item.difV >= 0 ? 'pos' : 'neg'}">${item.difV > 0 ? '+' : ''}${formatNumber(item.difV)}</td><td>${formatNumber(item.sAct)}</td><td>${formatNumber(item.sPas)}</td><td class="${item.difS >= 0 ? 'pos' : 'neg'}">${item.difS > 0 ? '+' : ''}${formatNumber(item.difS)}</td>`;
     return tr;
 }
 
