@@ -7,10 +7,10 @@ let fMes = 'Todos', fTienda = 'Todos', fDiv = 'Todos', fCat = 'Todos';
 const mesesVal = { 'enero':1, 'febrero':2, 'marzo':3, 'abril':4, 'mayo':5, 'junio':6, 'julio':7, 'agosto':8, 'septiembre':9, 'octubre':10, 'noviembre':11, 'diciembre':12 };
 
 const state = {
-    divisiones: { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenDivisiones', label: 'divisiones' },
-    categorias: { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenCategorias', label: 'categorías' },
-    tiendas:    { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaGerencialTiendas', label: 'tiendas' },
-    grupos:     { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaDetalleGrupos', label: 'grupos' }
+    divisiones: { data: [], query: '', page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenDivisiones', label: 'divisiones' },
+    categorias: { data: [], query: '', page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenCategorias', label: 'categorías' },
+    tiendas:    { data: [], query: '', page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaGerencialTiendas', label: 'tiendas' },
+    grupos:     { data: [], query: '', page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaDetalleGrupos', label: 'grupos' }
 };
 
 function formatNumber(num) {
@@ -281,17 +281,32 @@ function cambiarLimite(tablaKey) {
     state[tablaKey].page = 1; renderTabla(tablaKey);
 }
 
+function buscarTabla(tablaKey, valor) {
+    state[tablaKey].query = valor.toLowerCase();
+    state[tablaKey].page = 1;
+    renderTabla(tablaKey);
+}
+
+function getFiltrados(tablaKey) {
+    let s = state[tablaKey];
+    if (!s.query) return s.data;
+    return s.data.filter(item => item.nombre.toLowerCase().includes(s.query));
+}
+
 function cambiarPagina(tablaKey, dir) {
     let s = state[tablaKey];
-    const maxPage = Math.ceil(s.data.length / s.limit);
+    const filteredData = getFiltrados(tablaKey);
+    const maxPage = Math.ceil(filteredData.length / s.limit);
     if (s.page + dir >= 1 && s.page + dir <= maxPage) { s.page += dir; renderTabla(tablaKey); }
 }
 
 function renderTabla(tablaKey) {
     let s = state[tablaKey];
     const tbody = document.querySelector(`#${s.tableId} tbody`); tbody.innerHTML = '';
+
+    const filteredData = getFiltrados(tablaKey);
     const start = (s.page - 1) * s.limit;
-    s.data.slice(start, start + s.limit).forEach(item => {
+    filteredData.slice(start, start + s.limit).forEach(item => {
         let tr = document.createElement('tr');
         tr.innerHTML = `<td>${item.nombre}</td><td>${formatNumber(item.vAct)}</td><td>${formatNumber(item.vPas)}</td><td class="${item.difV >= 0 ? 'pos' : 'neg'}">${item.difV > 0 ? '+' : ''}${formatNumber(item.difV)}</td><td>${formatNumber(item.sAct)}</td><td>${formatNumber(item.sPas)}</td><td class="${item.difS >= 0 ? 'pos' : 'neg'}">${item.difS > 0 ? '+' : ''}${formatNumber(item.difS)}</td>`;
         
@@ -304,5 +319,5 @@ function renderTabla(tablaKey) {
 
         tbody.appendChild(tr);
     });
-    document.getElementById(`info-${tablaKey}`).innerText = `Página ${s.page} de ${Math.ceil(s.data.length / s.limit) || 1} (${s.data.length} ${s.label})`;
+    document.getElementById(`info-${tablaKey}`).innerText = `Página ${s.page} de ${Math.ceil(filteredData.length / s.limit) || 1} (${filteredData.length} ${s.label})`;
 }
