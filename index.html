@@ -186,6 +186,7 @@
             <div id="tab-tiendas" class="tab-content">
                 <div class="table-controls bg-secondary">
                     <div>Mostrar <select id="limit-tiendas" onchange="cambiarLimite('tiendas')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
+                    <div><input type="text" placeholder="Buscar tienda..." oninput="buscarTabla('tiendas', this.value)" style="padding: 6px 10px; border-radius: 4px; border: none; outline: none; font-family: 'Montserrat', sans-serif; font-size: 12px; width: 200px; max-width: 100%;"></div>
                     <div><span class="pagination-info" id="info-tiendas">Mostrando 0 de 0</span><button class="btn-page text-secondary" onclick="cambiarPagina('tiendas', -1)">&#9664; Ant</button><button class="btn-page text-secondary" onclick="cambiarPagina('tiendas', 1)">Sig &#9654;</button></div>
                 </div>
                 <div class="table-responsive-wrapper">
@@ -214,6 +215,7 @@
             <div id="tab-divisiones" class="tab-content">
                 <div class="table-controls">
                     <div>Mostrar <select id="limit-divisiones" onchange="cambiarLimite('divisiones')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
+                    <div><input type="text" placeholder="Buscar división..." oninput="buscarTabla('divisiones', this.value)" style="padding: 6px 10px; border-radius: 4px; border: none; outline: none; font-family: 'Montserrat', sans-serif; font-size: 12px; width: 200px; max-width: 100%;"></div>
                     <div><span class="pagination-info" id="info-divisiones">Mostrando 0 de 0</span><button class="btn-page" onclick="cambiarPagina('divisiones', -1)">&#9664; Ant</button><button class="btn-page" onclick="cambiarPagina('divisiones', 1)">Sig &#9654;</button></div>
                 </div>
                 <div class="table-responsive-wrapper">
@@ -242,6 +244,7 @@
             <div id="tab-categorias" class="tab-content">
                 <div class="table-controls bg-secondary">
                     <div>Mostrar <select id="limit-categorias" onchange="cambiarLimite('categorias')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
+                    <div><input type="text" placeholder="Buscar categoría..." oninput="buscarTabla('categorias', this.value)" style="padding: 6px 10px; border-radius: 4px; border: none; outline: none; font-family: 'Montserrat', sans-serif; font-size: 12px; width: 200px; max-width: 100%;"></div>
                     <div><span class="pagination-info" id="info-categorias">Mostrando 0 de 0</span><button class="btn-page text-secondary" onclick="cambiarPagina('categorias', -1)">&#9664; Ant</button><button class="btn-page text-secondary" onclick="cambiarPagina('categorias', 1)">Sig &#9654;</button></div>
                 </div>
                 <div class="table-responsive-wrapper">
@@ -270,6 +273,7 @@
             <div id="tab-grupos" class="tab-content">
                 <div class="table-controls">
                     <div>Mostrar <select id="limit-grupos" onchange="cambiarLimite('grupos')"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Todas</option></select> filas</div>
+                    <div><input type="text" placeholder="Buscar grupo..." oninput="buscarTabla('grupos', this.value)" style="padding: 6px 10px; border-radius: 4px; border: none; outline: none; font-family: 'Montserrat', sans-serif; font-size: 12px; width: 200px; max-width: 100%;"></div>
                     <div><span class="pagination-info" id="info-grupos">Mostrando 0 de 0</span><button class="btn-page" onclick="cambiarPagina('grupos', -1)">&#9664; Ant</button><button class="btn-page" onclick="cambiarPagina('grupos', 1)">Sig &#9654;</button></div>
                 </div>
                 <div class="table-responsive-wrapper">
