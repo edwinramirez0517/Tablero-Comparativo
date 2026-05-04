@@ -7,10 +7,10 @@ let fMes = 'Todos', fTienda = 'Todos', fDiv = 'Todos', fCat = 'Todos';
 const mesesVal = { 'enero':1, 'febrero':2, 'marzo':3, 'abril':4, 'mayo':5, 'junio':6, 'julio':7, 'agosto':8, 'septiembre':9, 'octubre':10, 'noviembre':11, 'diciembre':12 };
 
 const state = {
-    divisiones: { data: [], query: '', page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenDivisiones', label: 'divisiones' },
-    categorias: { data: [], query: '', page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenCategorias', label: 'categorías' },
-    tiendas:    { data: [], query: '', page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaGerencialTiendas', label: 'tiendas' },
-    grupos:     { data: [], query: '', page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaDetalleGrupos', label: 'grupos' }
+    divisiones: { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenDivisiones', label: 'divisiones' },
+    categorias: { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaResumenCategorias', label: 'categorías' },
+    tiendas:    { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaGerencialTiendas', label: 'tiendas' },
+    grupos:     { data: [], page: 1, limit: 25, sortCol: 'vAct', sortAsc: false, tableId: 'tablaDetalleGrupos', label: 'grupos' }
 };
 
 function formatNumber(num) {
@@ -37,39 +37,60 @@ function limpiarFiltros() {
     actualizarTablero(true);
 }
 
-function cargarVentas() {
-    return new Promise((resolver, rechazar) => {
-        Papa.parse('ventas.csv', {
-            download: true, header: false, delimiter: ';',
-            complete: function(resultados) {
-                const filas = resultados.data;
-                const metricasRow = filas[1];
-                let procesado = [];
-                for(let i = 2; i < filas.length; i++) {
-                    const fila = filas[i];
-                    if(!fila || fila.length < 7 || !fila[0]) continue;
-                    const tienda = fila[3], division = fila[4], categoria = fila[5];
-                    const grupoReal = fila[6] || fila[2] || (division + " - " + categoria); 
+// NUEVA LÓGICA DE EXTRACCIÓN INTELIGENTE (Busca archivos particionados)
+async function cargarVentasArchivo(url) {
+    try {
+        const response = await fetch(url);
+        // Si el archivo no existe (ej. aún no es septiembre), lo ignoramos sin romper nada.
+        if (!response.ok) return []; 
+        
+        const text = await response.text();
+        
+        return new Promise((resolve) => {
+            Papa.parse(text, {
+                header: false, delimiter: ';',
+                complete: function(resultados) {
+                    const filas = resultados.data;
+                    if (filas.length < 2) { resolve([]); return; }
+                    const metricasRow = filas[1];
+                    let procesado = [];
+                    for(let i = 2; i < filas.length; i++) {
+                        const fila = filas[i];
+                        if(!fila || fila.length < 7 || !fila[0]) continue;
+                        const tienda = fila[3], division = fila[4], categoria = fila[5];
+                        const grupoReal = fila[6] || fila[2] || (division + " - " + categoria); 
 
-                    for(let c = 7; c < fila.length; c++) {
-                        if (metricasRow[c] === 'Venta_Und_Anterior') {
-                            let mes = filas[0][c] ? filas[0][c].trim() : "";
-                            let pasadoStr = fila[c] ? fila[c].toString().replace(/,/g, '') : "0";
-                            let pasado = parseFloat(pasadoStr) || 0;
-                            let actualStr = fila[c+1] ? fila[c+1].toString().replace(/,/g, '') : "0";
-                            let actual = parseFloat(actualStr) || 0; 
-                            
-                            if ((pasado !== 0 || actual !== 0) && mes !== "") {
-                                mes = mes.charAt(0).toUpperCase() + mes.slice(1).toLowerCase();
-                                procesado.push({ mes, tienda, division, categoria, grupo: grupoReal, pasado, actual });
+                        for(let c = 7; c < fila.length; c++) {
+                            if (metricasRow[c] === 'Venta_Und_Anterior') {
+                                let mes = filas[0][c] ? filas[0][c].trim() : "";
+                                let pasadoStr = fila[c] ? fila[c].toString().replace(/,/g, '') : "0";
+                                let pasado = parseFloat(pasadoStr) || 0;
+                                let actualStr = fila[c+1] ? fila[c+1].toString().replace(/,/g, '') : "0";
+                                let actual = parseFloat(actualStr) || 0; 
+                                
+                                if ((pasado !== 0 || actual !== 0) && mes !== "") {
+                                    mes = mes.charAt(0).toUpperCase() + mes.slice(1).toLowerCase();
+                                    procesado.push({ mes, tienda, division, categoria, grupo: grupoReal, pasado, actual });
+                                }
                             }
                         }
                     }
+                    resolve(procesado);
                 }
-                resolver(procesado);
-            }, error: rechazar
+            });
         });
-    });
+    } catch (error) {
+        return [];
+    }
+}
+
+// Función que suma los 3 periodos del año
+async function cargarTodasLasVentas() {
+    const ventas1 = await cargarVentasArchivo('ventas_1.csv');
+    const ventas2 = await cargarVentasArchivo('ventas_2.csv');
+    const ventas3 = await cargarVentasArchivo('ventas_3.csv');
+    // Une los 3 archivos en un solo bloque de datos
+    return [...ventas1, ...ventas2, ...ventas3];
 }
 
 function cargarSaldos() {
@@ -94,7 +115,8 @@ function cargarSaldos() {
     });
 }
 
-Promise.all([cargarVentas(), cargarSaldos()]).then(archivos => {
+// INICIALIZADOR: Carga todo y enciende el dashboard
+Promise.all([cargarTodasLasVentas(), cargarSaldos()]).then(archivos => {
     datosVentasRaw = archivos[0];
     datosSaldosRaw = archivos[1];
     
@@ -281,36 +303,20 @@ function cambiarLimite(tablaKey) {
     state[tablaKey].page = 1; renderTabla(tablaKey);
 }
 
-function buscarTabla(tablaKey, valor) {
-    state[tablaKey].query = valor.toLowerCase();
-    state[tablaKey].page = 1;
-    renderTabla(tablaKey);
-}
-
-function getFiltrados(tablaKey) {
-    let s = state[tablaKey];
-    if (!s.query) return s.data;
-    return s.data.filter(item => item.nombre.toLowerCase().includes(s.query));
-}
-
 function cambiarPagina(tablaKey, dir) {
     let s = state[tablaKey];
-    const filteredData = getFiltrados(tablaKey);
-    const maxPage = Math.ceil(filteredData.length / s.limit);
+    const maxPage = Math.ceil(s.data.length / s.limit);
     if (s.page + dir >= 1 && s.page + dir <= maxPage) { s.page += dir; renderTabla(tablaKey); }
 }
 
 function renderTabla(tablaKey) {
     let s = state[tablaKey];
     const tbody = document.querySelector(`#${s.tableId} tbody`); tbody.innerHTML = '';
-
-    const filteredData = getFiltrados(tablaKey);
     const start = (s.page - 1) * s.limit;
-    filteredData.slice(start, start + s.limit).forEach(item => {
+    s.data.slice(start, start + s.limit).forEach(item => {
         let tr = document.createElement('tr');
         tr.innerHTML = `<td>${item.nombre}</td><td>${formatNumber(item.vAct)}</td><td>${formatNumber(item.vPas)}</td><td class="${item.difV >= 0 ? 'pos' : 'neg'}">${item.difV > 0 ? '+' : ''}${formatNumber(item.difV)}</td><td>${formatNumber(item.sAct)}</td><td>${formatNumber(item.sPas)}</td><td class="${item.difS >= 0 ? 'pos' : 'neg'}">${item.difS > 0 ? '+' : ''}${formatNumber(item.difS)}</td>`;
         
-        // Efecto de selección visual al hacer clic en cualquier fila de cualquier tabla
         tr.onclick = function() {
             let siblings = this.parentNode.children;
             for(let sib of siblings) { if(sib !== this) sib.classList.remove('row-selected'); }
@@ -319,5 +325,5 @@ function renderTabla(tablaKey) {
 
         tbody.appendChild(tr);
     });
-    document.getElementById(`info-${tablaKey}`).innerText = `Página ${s.page} de ${Math.ceil(filteredData.length / s.limit) || 1} (${filteredData.length} ${s.label})`;
+    document.getElementById(`info-${tablaKey}`).innerText = `Página ${s.page} de ${Math.ceil(s.data.length / s.limit) || 1} (${s.data.length} ${s.label})`;
 }
