@@ -199,7 +199,15 @@ Promise.all([cargarTodasLasVentas(), cargarSaldos()]).then(archivos => {
 function actualizarTablero(cascada = false) {
     let vFiltradas = datosVentasRaw.filter(d => (fMes === 'Todos' || d.mes === fMes) && (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
     let vTend = datosVentasRaw.filter(d => (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
-    let sFiltrados = datosSaldosRaw.filter(d => (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv) && (fCat === 'Todos' || d.categoria === fCat));
+    
+    // AQUÍ ESTÁ LA MAGIA: El filtro de saldo ahora hace a la bodega "inmune" al filtro de tienda
+    let sFiltrados = datosSaldosRaw.filter(d => {
+        let isCedis = d.tienda.includes('MEGABODEGA') || d.tienda.includes('CEDIS');
+        let matchTienda = (fTienda === 'Todos' || d.tienda === fTienda || isCedis);
+        let matchDiv = (fDiv === 'Todos' || d.division === fDiv);
+        let matchCat = (fCat === 'Todos' || d.categoria === fCat);
+        return matchTienda && matchDiv && matchCat;
+    });
 
     if(cascada) actualizarFiltrosDisponibles(datosVentasRaw.filter(d => (fTienda === 'Todos' || d.tienda === fTienda) && (fDiv === 'Todos' || d.division === fDiv)));
 
