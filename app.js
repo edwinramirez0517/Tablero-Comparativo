@@ -151,7 +151,7 @@ function cargarSaldos() {
                         let sPas = parseFloat(sPasStr) || 0; 
 
                         // SEPARACIÓN DE CEDIS VS TIENDAS
-                        let isCedis = nombreTienda.includes('CEDIS');
+                        let isCedis = nombreTienda.includes('MEGABODEGA');
                         let sActCedis = isCedis ? sAct : 0;
                         let sActTiendas = !isCedis ? sAct : 0;
 
