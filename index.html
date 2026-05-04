@@ -154,7 +154,7 @@
             <button class="btn-clear" onclick="limpiarFiltros()">Limpiar Filtros</button>
         </div>
 
-       <!-- ORDEN DE PESTAÑAS AJUSTADO -->
+        <!-- ORDEN DE PESTAÑAS AJUSTADO -->
         <div class="tabs" id="tabs-container" style="display:none;">
             <button class="tab-button active" onclick="openTab(event, 'tab-graficos')">Resumen Visual</button>
             <button class="tab-button" onclick="openTab(event, 'tab-tiendas')">Detalle por Tienda</button>
@@ -195,14 +195,16 @@
                             <tr>
                                 <th rowspan="2" style="vertical-align: bottom;" onclick="ordenarTabla('tiendas', 'nombre')">Tienda <span id="sort-tiendas-nombre" class="sort-icon"></span></th>
                                 <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
-                                <th colspan="3">INVENTARIO (Saldos)</th>
+                                <th colspan="5">INVENTARIO (Saldos Actuales y Comparativo)</th>
                             </tr>
                             <tr>
-                                <th onclick="ordenarTabla('tiendas', 'vAct')">Venta Actual <span id="sort-tiendas-vAct" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('tiendas', 'vPas')">Venta Pasada <span id="sort-tiendas-vPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('tiendas', 'vAct')">V. Actual <span id="sort-tiendas-vAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('tiendas', 'vPas')">V. Pasada <span id="sort-tiendas-vPas" class="sort-icon"></span></th>
                                 <th onclick="ordenarTabla('tiendas', 'difV')" style="border-right: 2px solid #fff;">Dif. Venta <span id="sort-tiendas-difV" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('tiendas', 'sAct')">Saldo Actual <span id="sort-tiendas-sAct" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('tiendas', 'sPas')">Saldo Pasado <span id="sort-tiendas-sPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('tiendas', 'sActTiendas')">Tiendas <span id="sort-tiendas-sActTiendas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('tiendas', 'sActCedis')">CEDIS <span id="sort-tiendas-sActCedis" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('tiendas', 'sAct')">Total Act. <span id="sort-tiendas-sAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('tiendas', 'sPas')">Total Pas. <span id="sort-tiendas-sPas" class="sort-icon"></span></th>
                                 <th onclick="ordenarTabla('tiendas', 'difS')">Dif. Saldo <span id="sort-tiendas-difS" class="sort-icon"></span></th>
                             </tr>
                         </thead>
@@ -224,14 +226,16 @@
                             <tr>
                                 <th rowspan="2" style="vertical-align: bottom;" onclick="ordenarTabla('divisiones', 'nombre')">División <span id="sort-divisiones-nombre" class="sort-icon"></span></th>
                                 <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
-                                <th colspan="3">INVENTARIO (Saldos)</th>
+                                <th colspan="5">INVENTARIO (Saldos Actuales y Comparativo)</th>
                             </tr>
                             <tr>
-                                <th onclick="ordenarTabla('divisiones', 'vAct')">Venta Actual <span id="sort-divisiones-vAct" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('divisiones', 'vPas')">Venta Pasada <span id="sort-divisiones-vPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('divisiones', 'vAct')">V. Actual <span id="sort-divisiones-vAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('divisiones', 'vPas')">V. Pasada <span id="sort-divisiones-vPas" class="sort-icon"></span></th>
                                 <th onclick="ordenarTabla('divisiones', 'difV')" style="border-right: 2px solid #fff;">Dif. Venta <span id="sort-divisiones-difV" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('divisiones', 'sAct')">Saldo Actual <span id="sort-divisiones-sAct" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('divisiones', 'sPas')">Saldo Pasado <span id="sort-divisiones-sPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('divisiones', 'sActTiendas')">Tiendas <span id="sort-divisiones-sActTiendas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('divisiones', 'sActCedis')">CEDIS <span id="sort-divisiones-sActCedis" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('divisiones', 'sAct')">Total Act. <span id="sort-divisiones-sAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('divisiones', 'sPas')">Total Pas. <span id="sort-divisiones-sPas" class="sort-icon"></span></th>
                                 <th onclick="ordenarTabla('divisiones', 'difS')">Dif. Saldo <span id="sort-divisiones-difS" class="sort-icon"></span></th>
                             </tr>
                         </thead>
@@ -253,14 +257,16 @@
                             <tr>
                                 <th rowspan="2" style="vertical-align: bottom;" onclick="ordenarTabla('categorias', 'nombre')">Categoría <span id="sort-categorias-nombre" class="sort-icon"></span></th>
                                 <th colspan="3" style="border-right: 2px solid #fff;">VENTAS (Unidades)</th>
-                                <th colspan="3">INVENTARIO (Saldos)</th>
+                                <th colspan="5">INVENTARIO (Saldos Actuales y Comparativo)</th>
                             </tr>
                             <tr>
-                                <th onclick="ordenarTabla('categorias', 'vAct')">Venta Actual <span id="sort-categorias-vAct" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('categorias', 'vPas')">Venta Pasada <span id="sort-categorias-vPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('categorias', 'vAct')">V. Actual <span id="sort-categorias-vAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('categorias', 'vPas')">V. Pasada <span id="sort-categorias-vPas" class="sort-icon"></span></th>
                                 <th onclick="ordenarTabla('categorias', 'difV')" style="border-right: 2px solid #fff;">Dif. Venta <span id="sort-categorias-difV" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('categorias', 'sAct')">Saldo Actual <span id="sort-categorias-sAct" class="sort-icon"></span></th>
-                                <th onclick="ordenarTabla('categorias', 'sPas')">Saldo Pasado <span id="sort-categorias-sPas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('categorias', 'sActTiendas')">Tiendas <span id="sort-categorias-sActTiendas" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('categorias', 'sActCedis')">CEDIS <span id="sort-categorias-sActCedis" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('categorias', 'sAct')">Total Act. <span id="sort-categorias-sAct" class="sort-icon"></span></th>
+                                <th onclick="ordenarTabla('categorias', 'sPas')">Total Pas. <span id="sort-categorias-sPas" class="sort-icon"></span></th>
                                 <th onclick="ordenarTabla('categorias', 'difS')">Dif. Saldo <span id="sort-categorias-difS" class="sort-icon"></span></th>
                             </tr>
                         </thead>
