@@ -1,4 +1,6 @@
-Chart.register(ChartDataLabels);
+if (typeof window !== 'undefined' && typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+    Chart.register(ChartDataLabels);
+}
 
 let datosVentasRaw = [];
 let datosSaldosRaw = [];
@@ -175,24 +177,26 @@ function cargarSaldos() {
 }
 
 // INICIALIZACIÓN
-Promise.all([cargarTodasLasVentas(), cargarSaldos()]).then(archivos => {
-    datosVentasRaw = archivos[0];
-    datosSaldosRaw = archivos[1];
-    
-    let mesesDisponibles = [...new Set(datosVentasRaw.map(d => d.mes))].sort((a, b) => getMesNum(a) - getMesNum(b));
-    if(mesesDisponibles.length > 0) {
-        document.getElementById('badge-periodo').innerText = `PERÍODO: ${mesesDisponibles[0]} a ${mesesDisponibles[mesesDisponibles.length-1]}`;
-    }
+if (typeof window !== 'undefined') {
+    Promise.all([cargarTodasLasVentas(), cargarSaldos()]).then(archivos => {
+        datosVentasRaw = archivos[0];
+        datosSaldosRaw = archivos[1];
 
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('kpi-container').style.display = 'grid';
-    document.getElementById('filtros-wrapper').style.display = 'flex';
-    document.getElementById('tabs-container').style.display = 'flex';
-    document.getElementById('graficos-container').style.display = 'block';
-    
-    inicializarFiltrosDOM();
-    actualizarTablero(true);
-}).catch(console.error);
+        let mesesDisponibles = [...new Set(datosVentasRaw.map(d => d.mes))].sort((a, b) => getMesNum(a) - getMesNum(b));
+        if(mesesDisponibles.length > 0) {
+            document.getElementById('badge-periodo').innerText = `PERÍODO: ${mesesDisponibles[0]} a ${mesesDisponibles[mesesDisponibles.length-1]}`;
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('kpi-container').style.display = 'grid';
+        document.getElementById('filtros-wrapper').style.display = 'flex';
+        document.getElementById('tabs-container').style.display = 'flex';
+        document.getElementById('graficos-container').style.display = 'block';
+
+        inicializarFiltrosDOM();
+        actualizarTablero(true);
+    }).catch(console.error);
+}
 
 // ================= ACTUALIZACIÓN DE DATOS Y KPIs =================
 
@@ -405,4 +409,10 @@ function renderTabla(tablaKey) {
     });
     
     document.getElementById(`info-${tablaKey}`).innerText = `Página ${s.page} de ${Math.ceil(s.filteredData.length / s.limit) || 1} (${s.filteredData.length} resultados)`;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        ordenarDatos
+    };
 }
